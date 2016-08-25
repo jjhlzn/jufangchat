@@ -49,6 +49,10 @@
                     'token': 'xyz'
                 }
             };
+            if (comment == '') {
+                alert('消息不能为空');
+                return;
+            }
             socket.emit('chat message', JSON.stringify(json));
             $('#m').val('');
             return false;
@@ -62,7 +66,7 @@
             var json = JSON.parse(msg);
             //var content = $('<div/>').append($('<span/>').css('color', 'red').text()) 
             
-            var content = json['time'] + '    ' + json['name'] + " --> " + emojify.replace(json['content']);;
+            var content = json['time'] + '  &nbsp;&nbsp; ' + json['name'] + " &nbsp;&nbsp; --> &nbsp;&nbsp; " + emojify.replace(json['content']);;
             var child = $('<div/>')[0];
             child.innerHTML = content;
             $('#messages').prepend($('<li>').append($(child)));
