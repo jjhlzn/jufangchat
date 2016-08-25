@@ -1,9 +1,15 @@
+var express = require('express');
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var sql = require('mssql')
 var redis = require("redis");
 var dateFormat = require('dateformat');
+var path = require('path');
+var serveStatic = require('serve-static');
+
+app.use(express.static(path.join(__dirname, 'bower_components')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 //数据库配置信息
 var config = {
@@ -21,9 +27,15 @@ var config = {
 
 var client = redis.createClient({detect_buffers: true, host: 'jf.yhkamani.com', port: 7777});
 
+/*
+app.get('/bower_components/emojify.js/dist/js/emojify.js', function(req, res){
+  res.sendfile('./bower_components/emojify.js/dist/js/emojify.js');
+}); */
+
 app.get('/', function(req, res){
   res.sendfile('index.html');
 });
+
 
 io.on('connection', function(socket){
   console.log('user connected')

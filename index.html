@@ -9,13 +9,22 @@
       form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
       form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
       #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages li { padding: 5px 10px; }
+      #messages li { padding: 5px 15px; }
       #messages li:nth-child(odd) { background: #eee; }
+
+      .emoji {
+            width: 1.5em;
+            height: 1.5em;
+            display: inline-block;
+            margin-bottom: -0.25em;
+      }
     </style>
 
     <script src="/socket.io/socket.io.js"></script>
+    <!-- <script src="http://requirejs.org/docs/release/2.2.0/minified/require.js"></script> -->
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
-   
+    <script src="/emojify.js/dist/js/emojify.js"></script>
+    <link rel="stylesheet" href="/emojify.js/dist/css/basic/emojify.css"></script>
   </head>
 
   <body>
@@ -45,12 +54,18 @@
             return false;
         });
 
+
+
+
+
         socket.on('chat message', function(msg){
             var json = JSON.parse(msg);
             //var content = $('<div/>').append($('<span/>').css('color', 'red').text()) 
-            var content = json['time'] + '    ' + json['name'] + " --> " + json['content'];
-
-            $('#messages').prepend($('<li>').text(content));
+            
+            var content = json['time'] + '    ' + json['name'] + " --> " + emojify.replace(json['content']);;
+            var child = $('<div/>')[0];
+            child.innerHTML = content;
+            $('#messages').prepend($('<li>').append($(child)));
         });
     </script>
 </html>

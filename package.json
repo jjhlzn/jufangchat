@@ -3,9 +3,10 @@
   "version": "0.0.1",
   "description": "my first socket.io app",
   "dependencies": {
+    "emojify": "^1.0.0",
+    "emojify.js": "^1.1.0",
     "express": "^4.14.0",
+    "jsdom": "^9.4.2",
     "socket.io": "^1.4.8"
   }
 }
-
-
