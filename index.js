@@ -27,8 +27,9 @@ app.get('/', function(req, res){
 
 io.on('connection', function(socket){
   console.log('user connected')
-  socket.on('chat message', function(msg){
+  socket.on('chat message', function(msg, Ack){
     console.log(msg);
+    console.log('Ack = ' + Ack);
     var json = JSON.parse(msg);
 
     var comment = json['request']['comment'];
@@ -58,6 +59,9 @@ io.on('connection', function(socket){
           //console.log(reply); 
       });
       io.emit('chat message', jsonString);
+      if (Ack) {
+        Ack(true)
+      }
     };
 
     var userInfo = client.get("nodejs_userinfo_"+userid, function(err, reply){
@@ -73,8 +77,8 @@ io.on('connection', function(socket){
         request.stream = true;
         request.query("select * from BasCust where mobile = '" + userid + "'");
         request.on('row', function(row){
-          console.log(row);
-          console.log('nickname = ' + row['NickName']);
+          //console.log(row);
+          //console.log('nickname = ' + row['NickName']);
           var nickName = row['NickName'];
           if (nickName == null || nickName == undefined){
             nickName = '匿名';
