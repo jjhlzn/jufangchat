@@ -29,7 +29,7 @@ io.on('connection', function(socket){
   console.log('user connected')
   socket.on('chat message', function(msg, Ack){
     console.log(msg);
-    console.log('Ack = ' + Ack);
+    //console.log('Ack = ' + Ack);
     var json = JSON.parse(msg);
 
     var comment = json['request']['comment'];

@@ -17,10 +17,11 @@
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
    
   </head>
+
   <body>
     <ul id="messages"></ul>
     <form id='form1' action="">
-      <input id="m" autocomplete="off" /><button>Send</button>
+      <input id="m" autocomplete="off" /><button>发送</button>
     </form>
   </body>
 
@@ -43,9 +44,13 @@
             $('#m').val('');
             return false;
         });
+
         socket.on('chat message', function(msg){
             var json = JSON.parse(msg);
-            $('#messages').append($('<li>').text(json['content']));
+            //var content = $('<div/>').append($('<span/>').css('color', 'red').text()) 
+            var content = json['time'] + '    ' + json['name'] + " --> " + json['content'];
+
+            $('#messages').prepend($('<li>').text(content));
         });
     </script>
 </html>
