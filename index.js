@@ -50,12 +50,12 @@ io.on('connection', function(socket){
           'id': idGenerate(),
           'time': dateFormat(Date.now(), 'HH:mm:ss'),
           'userId': userid,
-          'name': row['Nickname'],
+          'name': row['NickName'],
           'isManager': false
       };
       var jsonString = JSON.stringify(resp);
       client.rpush(['livecomments', jsonString], function(err, reply) {
-          console.log(reply); //prints 1
+          //console.log(reply); 
       });
       io.emit('chat message', jsonString);
     };
@@ -69,17 +69,18 @@ io.on('connection', function(socket){
         }
 
         sql.connect(config).then(function() {
-        console.log("select * from BasCust where mobile = '" + userid + "'");
         var request = new sql.Request();
         request.stream = true;
         request.query("select * from BasCust where mobile = '" + userid + "'");
         request.on('row', function(row){
-          var nickName = row['Nickname'];
+          console.log(row);
+          console.log('nickname = ' + row['NickName']);
+          var nickName = row['NickName'];
           if (nickName == null || nickName == undefined){
             nickName = '匿名';
           }
-          row['Nickname'] = nickName;
-          client.set("nodejs_userinfo_"+userid, JSON.stringify({Nickname: nickName}));
+          row['NickName'] = nickName;
+          client.set("nodejs_userinfo_"+userid, JSON.stringify({NickName: nickName}));
           sendResponse(row);
         });
       }).catch(function(err) {
