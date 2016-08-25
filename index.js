@@ -36,9 +36,11 @@ app.get('/', function(req, res){
   res.sendfile('index.html');
 });
 
+var clientCount = 0;
 
 io.on('connection', function(socket){
-  console.log('user connected')
+  clientCount++;
+  console.log('user connected, client count = ' + clientCount);
   socket.on('chat message', function(msg, Ack){
     console.log(msg);
     //console.log('Ack = ' + Ack);
@@ -111,6 +113,7 @@ io.on('connection', function(socket){
 
   socket.on('disconnect', function(){
     console.log('user disconnected');
+    clientCount--;
   });
 });
 
