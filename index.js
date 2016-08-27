@@ -27,11 +27,6 @@ var config = {
 
 var client = redis.createClient({detect_buffers: true, host: 'jf.yhkamani.com', port: 7777});
 
-/*
-app.get('/bower_components/emojify.js/dist/js/emojify.js', function(req, res){
-  res.sendfile('./bower_components/emojify.js/dist/js/emojify.js');
-}); */
-
 app.get('/', function(req, res){
   res.sendfile('index.html');
 });
@@ -47,6 +42,7 @@ io.on('connection', function(socket){
     var json = JSON.parse(msg);
 
     var comment = json['request']['comment'];
+    var songId = json['request']['song']['id'];
     var userid = json['userInfo']['userid'];
 
     var idGenerate = function() {
@@ -59,7 +55,13 @@ io.on('connection', function(socket){
     };
 
     var sendResponse = function(row) {
+
       console.log(row);
+      if (!row['CanChat']) {
+        console.log('user ' + userid + " can't chat");
+        return;
+      }
+
       var resp = {
           'content': comment,
           'id': idGenerate(),
@@ -78,7 +80,8 @@ io.on('connection', function(socket){
       }
     };
 
-    var userInfo = client.get("nodejs_userinfo_"+userid, function(err, reply){
+    var chatFunction = function() {
+      client.get("nodejs_userinfo_"+userid, function(err, reply){
         console.log(reply);
         if (reply != null) {
           console.log('find user in redis');
@@ -87,27 +90,62 @@ io.on('connection', function(socket){
         }
 
         sql.connect(config).then(function() {
-        var request = new sql.Request();
-        request.stream = true;
-        request.query("select * from BasCust where mobile = '" + userid + "'");
-        request.on('row', function(row){
-          //console.log(row);
-          //console.log('nickname = ' + row['NickName']);
-          var nickName = row['NickName'];
-          if (nickName == null || nickName == undefined){
-            nickName = '匿名';
-          }
-          row['NickName'] = nickName;
-          client.set("nodejs_userinfo_"+userid, JSON.stringify({NickName: nickName}));
-          sendResponse(row);
-        });
-      }).catch(function(err) {
-        console.log(err);
-      }); 
-    });
-    
+          var request = new sql.Request();
+          request.stream = true;
+          request.query("select * from BasCust where mobile = '" + userid + "'");
+          request.on('row', function(row){
+            //将昵称和是否能发言放到redis中
+            var nickName = row['NickName'];
+            var canChat = row['CanChat'];
+            if (nickName == null || nickName == undefined){
+              nickName = '匿名';
+            }
+            row['NickName'] = nickName;
+            if (canChat == null || canChat == undefined) {
+              canChat = true;
+            }
+            row['CanChat'] = canChat;
 
-    
+            client.set("nodejs_userinfo_"+userid, JSON.stringify({NickName: nickName, CanChat: canChat}));
+            sendResponse(row);
+          });
+        }).catch(function(err) {
+          console.log(err);
+        }); 
+      });
+    }
+
+
+    //验证改课是否已经关闭评论
+    client.get("nodejs_song_" + songId, function(err, reply){
+       console.log("songinfo  in redis = " + reply);
+       if (reply != null) {
+         console.log('find song in redis');
+         //根据找到的纪录进行检查
+         var songInfo = JSON.parse(reply);
+         if (songInfo['CanComment']) {
+           chatFunction();
+         } else {
+           console.log("song[id = " + songId + "] can't chat");
+         }
+         return;
+       }
+
+       //从数据库中进行查询
+       sql.connect(config).then(function() {
+         var request = new sql.Request();
+         request.stream = true;
+         request.query("select * from BasSong where SongId = " + songId);
+         request.on('row', function(row){
+           var songInfo = {SongId: row['SongId'], CanComment: row['CanComment'] == 1}
+           client.set("nodejs_song_" + songId, JSON.stringify(songInfo));
+           console.log("songInfo.CanComment = " + songInfo.CanComment);
+           if (songInfo.CanComment) {
+             chatFunction();
+           }
+         });
+       });
+    });
     //ack(true);
   });
 

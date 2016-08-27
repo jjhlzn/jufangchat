@@ -62,7 +62,8 @@
             var json = JSON.parse(msg);
             //var content = $('<div/>').append($('<span/>').css('color', 'red').text()) 
             
-            var content = json['time'] + '  &nbsp;&nbsp; ' + json['name'] + " &nbsp;&nbsp; --> &nbsp;&nbsp; " + emojify.replace(json['content']);;
+            var content = json['time'] + '  &nbsp;&nbsp; ' + json['name'] 
+                          + " &nbsp;&nbsp; --> &nbsp;&nbsp; " + emojify.replace(json['content']);;
             var child = $('<div/>')[0];
             child.innerHTML = content;
             $('#messages').prepend($('<li>').append($(child)));
