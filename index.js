@@ -7,9 +7,11 @@ var redis = require("redis");
 var dateFormat = require('dateformat');
 var path = require('path');
 var serveStatic = require('serve-static');
+var logger = require('morgan');
 
 app.use(express.static(path.join(__dirname, 'bower_components')));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(logger('dev'));
 
 //数据库配置信息
 var config = {
@@ -27,8 +29,45 @@ var config = {
 
 var client = redis.createClient({detect_buffers: true, host: 'jf.yhkamani.com', port: 7777});
 
+var idGenerate = function() {
+    var now = new Date();
+    var hour = now.getHours();
+    var minute = now.getMinutes();
+    var second = now.getSeconds();
+    var millisecond = now.getMilliseconds();
+    return hour * 10000000 + minute * 100000 + second * 1000 + millisecond;
+};
+
+
+var comment_list = ['a', 'b', 'c', 'd', 'e', 'f'];
+var user_info_list = ['jjh', 'lzn', 'zhang'];
+
+var get_random_response = function() {
+    var comment = comment_list[Math.ceil(Math.random() * 100 % (comment_list.length - 1))];
+    var userInfo = user_info_list[Math.ceil(Math.random() * 100 % (user_info_list.length - 1))];
+    return  {
+          'content': comment,
+          'id': idGenerate(),
+          'time': dateFormat(Date.now(), 'HH:MM:ss'),
+          'userId': '13706794299',
+          'name': userInfo,
+          'isManager': false
+      };
+};
+
 app.get('/', function(req, res){
   res.sendfile('index.html');
+});
+
+app.get('/refresh_chat', function(req, res) {
+  for (var i = 0; i < 5; i ++) {
+    var resp = get_random_response();
+      var jsonString = JSON.stringify(resp);
+      client.rpush(['livecomments', jsonString], function(err, reply) {
+      });
+      io.emit('chat message', jsonString);
+  }
+  res.end('refresh success');
 });
 
 var clientCount = 0;
@@ -44,15 +83,6 @@ io.on('connection', function(socket){
     var comment = json['request']['comment'];
     var songId = json['request']['song']['id'];
     var userid = json['userInfo']['userid'];
-
-    var idGenerate = function() {
-        var now = new Date();
-        var hour = now.getHours();
-        var minute = now.getMinutes();
-        var second = now.getSeconds();
-        var millisecond = now.getMilliseconds();
-        return hour * 10000000 + minute * 100000 + second * 1000 + millisecond;
-    };
 
     var sendResponse = function(row) {
 
