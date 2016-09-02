@@ -208,7 +208,7 @@ Chat.prototype.get_stat = function(streamName, req, res) {
 
 //获取最新的20条聊天记录
 Chat.prototype.get_latest_chats = function(songId, req, res) {
-    client.lrange('livecomments', -20, -1, function(err, replies) { 
+    client.lrange('livecomments', -50, -1, function(err, replies) { 
         var result = {};
         res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
         if (err) {
