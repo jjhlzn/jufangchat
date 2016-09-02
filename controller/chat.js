@@ -71,7 +71,7 @@ Chat.prototype.get_client_count = function() {
 //参数：用户信息、请求的json, Ack
 //根据这些信息，把消息发给所有连接到的socket
 var sendResponse = function(io, userInfo, json, Ack) {
-    console.log(userInfo);
+    //console.log(userInfo);
     var comment = json['request']['comment'];
     var songId = json['request']['song']['id'];
     var userid = json['userInfo']['userid'];
@@ -103,7 +103,7 @@ var sendResponse = function(io, userInfo, json, Ack) {
 
 
 var chatFunction = function(io, json, Ack) {
-    console.log("json = " + JSON.stringify(json));
+    //console.log("json = " + JSON.stringify(json));
     //从redis检查是否有用户信息，如果没有，需要从数据库中获取用户信息（获取用户信息，是为了获取nickname，以及看看是否被禁言）
     var userid = json['userInfo']['userid'];
     client.get("nodejs_userinfo_"+userid, function(err, reply){
@@ -176,12 +176,12 @@ var checkSong = function(songId, func) {
 }
 
 Chat.prototype.handle_message = function(io, msg, Ack) {
-    console.log(msg);
+    //console.log(msg);
     var json = JSON.parse(msg);
     var songId = json['request']['song']['id'];
     checkSong(songId, function() {
-        console.log('invoke chatFunction()');
-        console.log("json = " + JSON.stringify(json));
+        //console.log('invoke chatFunction()');
+        //console.log("json = " + JSON.stringify(json));
         chatFunction(io, json, Ack);
     });
 };
