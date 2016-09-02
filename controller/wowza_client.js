@@ -16,7 +16,7 @@ module.exports.get_client_count = function(streamName, func) {
             return;
         }
 
-        console.log(body);
+        //console.log(body);
         parseString(body, function (err, result) {
             //console.dir(result);
             var streams = result['WowzaStreamingEngine']['Stream'];
