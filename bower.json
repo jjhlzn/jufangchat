@@ -16,6 +16,7 @@
   ],
   "dependencies": {
     "emoji-parser": "^0.1.1",
-    "emojify.js": "^1.1.0"
+    "emojify.js": "^1.1.0",
+    "jquery": "^1.11.1"
   }
 }

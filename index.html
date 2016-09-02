@@ -18,18 +18,48 @@
             display: inline-block;
             margin-bottom: -0.25em;
       }
+
+
+      #refresh_chat_button { 
+         width: 80px; 
+         background: rgb(130, 224, 255); 
+         border: none; 
+         padding: 5px; 
+         margin: 5px;
+      }
+
+      #onlinePeople {
+         font: 15px Helvetica, Arial ;
+      }
+
+      #messages {
+          float: left;
+          width: 50%;
+      }
+
+      #infoDiv {
+          margin: 0 5px 0 0;
+      }
     </style>
 
     <!-- <script src="/socket.io/socket.io.js"></script> -->
      <script src="/socket.io-client/socket.io.js"></script> 
-    <!-- <script src="http://requirejs.org/docs/release/2.2.0/minified/require.js"></script> -->
-    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="/jquery/dist/jquery.js"></script>
     <script src="/emojify.js/dist/js/emojify.js"></script>
     <link rel="stylesheet" href="/emojify.js/dist/css/basic/emojify.css"></script>
   </head>
 
   <body>
-    <ul id="messages"></ul>
+    <div> 
+        <ul id="messages"></ul>
+        <div> 
+            <div id="infoDiv"> 
+                <p id='onlinePeople'> 音频在线人数：0人， 聊天在线人数：0人</p>   
+                <p> <button id='refresh_chat_button'>刷屏</button> </p> 
+            </div>
+         </div>
+    </div>
+    
     <form id='form1' action="">
       <input id="m" autocomplete="off" /><button>发送</button>
     </form>
@@ -37,6 +67,35 @@
 
 
    <script>
+        function addCommentToUI(comment) {
+            //console.log(comment);
+            
+            var content = comment['time'] + '  &nbsp;&nbsp; ' + comment['name'] 
+                          + " &nbsp;&nbsp; --> &nbsp;&nbsp; " + emojify.replace(comment['content']);
+            //console.log(content);
+            var child = $('<div/>')[0];
+            child.innerHTML = content;
+            $('#messages').prepend($('<li>').append($(child)));
+        }
+
+        $('#refresh_chat_button').click(function(){
+            $.get('/refresh_chat', function(){
+                //alert('刷屏成功！');
+            });
+        });
+
+        $.get('/get_latest_chats', function(data){
+            //console.log(data);
+            if (data['status'] != 0) {
+                return;
+            }
+
+            var comments = data['comments'];
+            for(var i = 0; i < comments.length; i++) {
+                addCommentToUI(JSON.parse(comments[i]));
+            }
+        });
+
         var socket = io();
         $('form').submit(function(){
             var comment = $('#m').val();
@@ -52,7 +111,7 @@
             };
             if (comment == '') {
                 alert('消息不能为空');
-                return;
+                return false;;
             }
             socket.emit('chat message', JSON.stringify(json));
             $('#m').val('');
@@ -62,12 +121,24 @@
         socket.on('chat message', function(msg){
             var json = JSON.parse(msg);
             //var content = $('<div/>').append($('<span/>').css('color', 'red').text()) 
-            
-            var content = json['time'] + '  &nbsp;&nbsp; ' + json['name'] 
-                          + " &nbsp;&nbsp; --> &nbsp;&nbsp; " + emojify.replace(json['content']);;
-            var child = $('<div/>')[0];
-            child.innerHTML = content;
-            $('#messages').prepend($('<li>').append($(child)));
+            addCommentToUI(json);
         });
+
+        function  refresh_online_people() {
+            $.get( "/get_stat?stream=feiyang", function( data ) {
+                //console.log(data);
+                //var json = JSON.parse(data);
+                if (data['status'] == 0) {
+                    //console.log("chatCount = " + data["result"]["chatCount"]);
+                    var message = "音频在线人数："+ data["result"]["wowzaClientCount"] +"， 聊天在线人数：" + data["result"]["chatCount"];
+                    $('#onlinePeople').html(message);
+                }
+                
+                //$( ".onlinePeople" ).html( data );
+            });
+        }
+
+        refresh_online_people();
+        setInterval(refresh_online_people, 10000); //每隔10s刷新一次
     </script>
 </html>

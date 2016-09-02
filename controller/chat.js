@@ -2,13 +2,34 @@
 var redis = require("redis");
 var db = require('../db');
 var dateFormat = require('dateformat');
+var wowza = require('./wowza_client');
 
 var Chat = function(io) {
     this.io = io;
     this.clientCount = 0;
 }
 
-var client = redis.createClient({detect_buffers: true, host: 'jf.yhkamani.com', port: 7777});
+var client = redis.createClient({
+    detect_buffers: true, 
+    host: 'jf.yhkamani.com', 
+    port: 7777,
+    retry_strategy: function (options) {
+        if (options.error.code === 'ECONNREFUSED') {
+            // End reconnecting on a specific error and flush all commands with a individual error
+            return new Error('The server refused the connection');
+        }
+        if (options.total_retry_time > 1000 * 60 * 60) {
+            // End reconnecting after a specific timeout and flush all commands with a individual error
+            return new Error('Retry time exhausted');
+        }
+        if (options.times_connected > 10) {
+            // End reconnecting with built in error
+            return undefined;
+        }
+        // reconnect after
+        return Math.max(options.attempt * 100, 3000);
+    }
+});
 
 Chat.prototype.next_id = function() {
     var now = new Date();
@@ -63,7 +84,7 @@ var sendResponse = function(io, userInfo, json, Ack) {
     var resp = {
         'content': comment,
         'id': new Chat().next_id(),
-        'time': dateFormat(Date.now(), 'HH:mm:ss'),
+        'time': dateFormat(Date.now(), 'HH:MM:ss'),
         'userId': userid,
         'name': userInfo['NickName'],
         'isManager': false
@@ -154,7 +175,6 @@ var checkSong = function(songId, func) {
     });
 }
 
-
 Chat.prototype.handle_message = function(io, msg, Ack) {
     console.log(msg);
     var json = JSON.parse(msg);
@@ -175,6 +195,31 @@ Chat.prototype.refresh_chat = function(req, res) {
         this.io.emit('chat message', jsonString);
     }
     res.end('refresh success');
+};
+
+Chat.prototype.get_stat = function(streamName, req, res) {
+    var that = this;
+    wowza.get_client_count(streamName, function(count){
+        var result = { "status": 0, message: '', result: {chatCount: that.get_client_count() + '人', wowzaClientCount: count + '人'}};
+        res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
+        res.end(JSON.stringify(result));
+    });
+};
+
+//获取最新的20条聊天记录
+Chat.prototype.get_latest_chats = function(songId, req, res) {
+    client.lrange('livecomments', -20, -1, function(err, replies) { 
+        var result = {};
+        res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
+        if (err) {
+            result = {status: -1, message: 'sever error'};
+            res.end(JSON.stringify(result));
+            return;
+        }
+
+        result = {status: 0, message: '', comments: replies};
+        res.end(JSON.stringify(result));
+    });
 };
 
 exports = module.exports = Chat;
