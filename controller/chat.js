@@ -158,7 +158,7 @@ Chat.prototype.handle_message = function(io, msg, Ack) {
         client.get("nodejs_song_" + songId, function(err, reply){
             //console.log("songinfo  in redis = " + reply);
             if (reply != null) {
-                console.log('find song in redis');
+                //console.log('find song in redis');
                 //根据找到的纪录进行检查
                 var songInfo = JSON.parse(reply);
                 if (songInfo['CanComment']) {
@@ -216,6 +216,7 @@ Chat.prototype.handle_message = function(io, msg, Ack) {
         });
         //把聊天发送到所有的sockets
         io.emit('chat message', jsonString);
+        console.log(userid + "--" + userInfo['NickName'] + " said: " + comment);
         if (Ack) {
             Ack(true)
         }
