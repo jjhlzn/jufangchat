@@ -18,10 +18,10 @@ function testOne() {
                     'token': 'xyz'
                 }
             }));
-    }, 1000);
+    }, 5000);
   });
 }
 
-for (var i = 0; i < 200; i++) {
+for (var i = 0; i < 50; i++) {
   testOne();
 }
