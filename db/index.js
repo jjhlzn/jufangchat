@@ -10,7 +10,7 @@ var config = {
     pool: {
         max: 10,
         min: 0,
-        idleTimeoutMillis: 5000
+        idleTimeoutMillis: 30000
     }
 };
 
