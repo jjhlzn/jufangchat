@@ -8,6 +8,6 @@ function testOne() {
   });
 }
 
-for (var i = 0; i < 200; i++) {
+for (var i = 0; i < 150; i++) {
   testOne();
 }
