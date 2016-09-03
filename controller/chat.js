@@ -3,10 +3,13 @@ var redis = require("redis");
 var db = require('../db');
 var dateFormat = require('dateformat');
 var wowza = require('./wowza_client');
+var sprintf = require("sprintf-js").sprintf;
+var vsprintf = require("sprintf-js").vsprintf;
 
 var Chat = function(io) {
     this.io = io;
     this.clientCount = 0;
+    this.users = {};
 }
 
 var client = redis.createClient({
@@ -52,6 +55,7 @@ Chat.prototype.get_random_response = function() {
           'time': dateFormat(Date.now(), 'HH:MM:ss'),
           'userId': '13706794299',
           'name': userInfo,
+          'name1': vsprintf("%10s", [userInfo]),
           'isManager': false
       };
 };
@@ -68,52 +72,27 @@ Chat.prototype.get_client_count = function() {
     return this.clientCount;
 }
 
-//参数：用户信息、请求的json, Ack
-//根据这些信息，把消息发给所有连接到的socket
-var sendResponse = function(io, userInfo, json, Ack) {
-    //console.log(userInfo);
-    var comment = json['request']['comment'];
-    var songId = json['request']['song']['id'];
-    var userid = json['userInfo']['userid'];
-    //检查该用户是否被禁言
-    if (!userInfo['CanChat']) {
-        console.log('user ' + userid + " can't chat");
-        return;
-    }
 
-    var resp = {
-        'content': comment,
-        'id': new Chat().next_id(),
-        'time': dateFormat(Date.now(), 'HH:MM:ss'),
-        'userId': userid,
-        'name': userInfo['NickName'],
-        'isManager': false
-    };
-
-    var jsonString = JSON.stringify(resp);
-    //将请求保存到redis中
-    client.rpush(['livecomments', jsonString], function(err, reply) {
-    });
-    //把聊天发送到所有的sockets
-    io.emit('chat message', jsonString);
-    if (Ack) {
-        Ack(true)
-    }
-};
-
-
-var chatFunction = function(io, json, Ack) {
-    //console.log("json = " + JSON.stringify(json));
-    //从redis检查是否有用户信息，如果没有，需要从数据库中获取用户信息（获取用户信息，是为了获取nickname，以及看看是否被禁言）
-    var userid = json['userInfo']['userid'];
+var find_user_by_mobile = function(mobile, callback) {
+    var userid = mobile;
     client.get("nodejs_userinfo_"+userid, function(err, reply){
         console.log("find userid = + " + userid + ' contents is ' + reply);
         if (reply != null) {
             console.log('find user in redis');
-            sendResponse(io, JSON.parse(reply), json, Ack);
+            callback(JSON.parse(reply));
             return;
         }
 
+        var makeUserJson = function(row) {
+            return {
+                NickName: row['NickName'], 
+                NickName1: vsprintf("%10s", [row['NickName']]), 
+                CanChat: row['CanChat'],
+                Mobile: row['Mobile'],
+                CustName: row['CustName']
+            };
+        };
+        
         db.get_connection().then(function() {
             var request = db.get_request();
             request.stream = true;
@@ -128,61 +107,128 @@ var chatFunction = function(io, json, Ack) {
                 row['NickName'] = nickName;
                 if (canChat == null || canChat == undefined) {
                     canChat = true;
+                } else if (canChat == 0) {
+                    canChat = true;
+                } else if (canChat == 1) {
+                    canChat = false;
                 }
                 row['CanChat'] = canChat;
-                client.set("nodejs_userinfo_"+userid, JSON.stringify({NickName: nickName, CanChat: canChat}));
-                sendResponse(io, row, json, Ack);
+                //console.log(row);
+                var userJson = makeUserJson(row);
+                client.set("nodejs_userinfo_"+userid, JSON.stringify(userJson));
+                callback(userJson);
             });
         }).catch(function(err) {
             console.log(err);
         }); 
     });
-}
+};
 
-//该函数检查课程是否被禁言，如果没有被禁言，调用func进行处理
-var checkSong = function(songId, func) {
-    //验证改课是否已经关闭评论
-    client.get("nodejs_song_" + songId, function(err, reply){
-        console.log("songinfo  in redis = " + reply);
-        if (reply != null) {
-            console.log('find song in redis');
-            //根据找到的纪录进行检查
-            var songInfo = JSON.parse(reply);
-            if (songInfo['CanComment']) {
-                func();
-            } else {
-                console.log("song[id = " + songId + "] can't chat");
-            }
-            return;
-        }
 
-        //从数据库中进行查询
-        db.get_connnection().then(function() {
-            var request = db.get_request();
-            request.stream = true;
-            request.query("select * from BasSong where SongId = " + songId);
-            request.on('row', function(row){
-                var songInfo = {SongId: row['SongId'], CanComment: row['CanComment'] == 1}
-                //将数据设置到redis内存中
-                client.set("nodejs_song_" + songId, JSON.stringify(songInfo));
-
-                console.log("songInfo.CanComment = " + songInfo.CanComment);
-                if (songInfo.CanComment) {
-                    func();
-                }
-            });
-        });
+Chat.prototype.join = function(socket, msg, Ack) {
+    this.increase_client();
+    var json = JSON.parse(msg);
+    this.users[socket.id] = json['userInfo'];
+    socket.emit('joinResult', JSON.stringify({status: 0, message: ''}));
+    //告诉其他用户有新用户加入
+    var that = this;
+    find_user_by_mobile(json['userInfo']['userid'], function(userInfo){
+        //加入到redis中
+        var result = {user: userInfo, client: json['client']}
+        //client.hset("liveusers", socket.id, JSON.stringify(result), redis.print);
+        that.users[socket.id] = result;
+        that.io.emit('newuser', JSON.stringify({status: 0, message: '', user: userInfo, client: json['client']}));
     });
 }
 
+Chat.prototype.handle_disconnect = function(socket) {
+    this.decrease_client();
+    var user = this.users[socket.id];
+    delete this.users[socket.id];
+    if (user && user['user']) {
+        this.io.emit('user disconnect', {status: 0, message: '', user: {id: user['user']['mobile']}});
+    }
+}
+
 Chat.prototype.handle_message = function(io, msg, Ack) {
+    //参数：用户信息、请求的json, Ack
+    //该函数检查课程是否被禁言，如果没有被禁言，调用func进行处理
+    var checkSong = function(songId, callback) {
+        //验证改课是否已经关闭评论
+        client.get("nodejs_song_" + songId, function(err, reply){
+            console.log("songinfo  in redis = " + reply);
+            if (reply != null) {
+                console.log('find song in redis');
+                //根据找到的纪录进行检查
+                var songInfo = JSON.parse(reply);
+                if (songInfo['CanComment']) {
+                    callback();
+                } else {
+                    console.log("song[id = " + songId + "] can't chat");
+                }
+                return;
+            }
+
+            //从数据库中进行查询
+            db.get_connnection().then(function() {
+                var request = db.get_request();
+                request.stream = true;
+                request.query("select * from BasSong where SongId = " + songId);
+                request.on('row', function(row){
+                    var songInfo = {SongId: row['SongId'], CanComment: row['CanComment'] == 1}
+                    //将数据设置到redis内存中
+                    client.set("nodejs_song_" + songId, JSON.stringify(songInfo));
+
+                    console.log("songInfo.CanComment = " + songInfo.CanComment);
+                    if (songInfo.CanComment) {
+                        callback();
+                    }
+                });
+            });
+        });
+    }
+
+    //根据这些信息，把消息发给所有连接到的socket
+    var sendResponse = function(io, userInfo, json, Ack) {
+        //console.log(userInfo);
+        var comment = json['request']['comment'];
+        var songId = json['request']['song']['id'];
+        var userid = json['userInfo']['userid'];
+        //检查该用户是否被禁言
+        if (!userInfo['CanChat']) {
+            console.log('user ' + userid + " can't chat");
+            return;
+        }
+
+        var resp = {
+            'content': comment,
+            'id': new Chat().next_id(),
+            'time': dateFormat(Date.now(), 'HH:MM:ss'),
+            'userId': userid,
+            'name': userInfo['NickName'],
+            'name1': userInfo['NickName1'],
+            'isManager': false
+        };
+
+        var jsonString = JSON.stringify(resp);
+        //将请求保存到redis中
+        client.rpush(['livecomments', jsonString], function(err, reply) {
+        });
+        //把聊天发送到所有的sockets
+        io.emit('chat message', jsonString);
+        if (Ack) {
+            Ack(true)
+        }
+    };
+
     //console.log(msg);
     var json = JSON.parse(msg);
     var songId = json['request']['song']['id'];
     checkSong(songId, function() {
-        //console.log('invoke chatFunction()');
-        //console.log("json = " + JSON.stringify(json));
-        chatFunction(io, json, Ack);
+        var userid = json['userInfo']['userid'];
+        find_user_by_mobile(userid, function(userInfo){
+            sendResponse(io, userInfo, json, Ack);
+        });
     });
 };
 
@@ -222,4 +268,13 @@ Chat.prototype.get_latest_chats = function(songId, req, res) {
     });
 };
 
+//获取在线聊天的用户
+Chat.prototype.get_live_users = function(songId, req, res) {
+    res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
+    var result = [];
+    for (var id in this.users) {
+        result.push(this.users[id]);
+    }
+    res.end(JSON.stringify({status: 0, message: '', users: result}));
+}
 exports = module.exports = Chat;

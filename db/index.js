@@ -15,7 +15,9 @@ var config = {
 };
 
 module.exports.get_connection = function() {
-    return sql.connect(config);
+    var conn = sql.connect(config);
+    //conn.on('error', function(err){console.log(err);});
+    return conn;
 }
 
 module.exports.get_request = function() {
