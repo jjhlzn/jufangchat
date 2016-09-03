@@ -37,8 +37,9 @@ module.exports.set = function(app, io) {
       
         //console.log('user connected, client count = ' + chat.get_client_count());
         //console.log('socket.id = ' + socket.id);
-        console.log("new user connected, current user count: " + chat.get_client_count());
         chat.increase_client();
+        console.log("new user connected, current user count: " + chat.get_client_count());
+        
         /*
         socket.on('join room', function(msg, Ack){
             console.log('get join room request');
