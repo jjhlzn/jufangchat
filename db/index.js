@@ -16,6 +16,7 @@ var config = {
 
 module.exports.get_connection = function() {
     //conn.on('error', function(err){console.log(err);});
+    //console.log('connect = ' + sql.connect(config));
     return  sql.connect(config);
 }
 

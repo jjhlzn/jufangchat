@@ -170,7 +170,7 @@ Chat.prototype.handle_message = function(io, msg, Ack) {
             }
 
             //从数据库中进行查询
-            db.get_connnection().then(function() {
+            db.get_connection().then(function() {
                 var request = db.get_request();
                 request.stream = true;
                 request.query("select * from BasSong where SongId = " + songId);
