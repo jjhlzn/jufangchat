@@ -54,6 +54,7 @@ module.exports.set = function(app, io) {
             //console.log('user disconnected');
             //chat.decrease_client();
             chat.handle_disconnect(socket);
+            console.log("user left, current user count: " + chat.get_client_count());
         });
         
         socket.emit('connect success', JSON.stringify({status: 0, message: ''}));
