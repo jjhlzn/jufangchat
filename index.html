@@ -41,7 +41,7 @@
       }
 
       #usersDiv {
-          visibility: hidden;
+
       }
     </style>
 
@@ -50,6 +50,9 @@
     <script src="/jquery/dist/jquery.js"></script>
     <script src="/emojify.js/dist/js/emojify.js"></script>
     <script src="/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/jstree/dist/jstree.min.js"></script>
+
+    <link rel="stylesheet" href="/jstree/dist/themes/default/style.min.css" />
     <link rel="stylesheet" href="/emojify.js/dist/css/basic/emojify.css"></script>
     <link rel="stylesheet" href="/bootstrap/dist/css/bootstrap.css"></script>
     
@@ -63,11 +66,7 @@
             <div id="infoDiv"> 
                 <p id='onlinePeople'> 音频在线人数：0人， 聊天在线人数：0人</p>   
                 <p> <button class="btn btn-primary" id='refresh_chat_button'>刷屏</button> </p>
-                <div id='usersDiv'>
-                    <p>在线人员：</p>
-                    <p id='users'> 
-                        
-                    </p>
+                <div id='users'>
                 </div> 
             </div>
          </div>
@@ -79,140 +78,5 @@
   </body>
 
 
-   <script>
-        var songId = 14;
-        var clientJson = {
-                 appversion: "1.0",
-                 model: "PC",
-                 osversion: "",
-                 platform: "browser",
-                 screensize: "" };
-                 
-        var userJson = {
-            'userid': '13706794299',
-            'token': 'xyz'          
-        };
-        
-        var sequence = 0;
-        function addCommentToUI(comment) {
-
-            var content = comment['time'] + '  &nbsp;&nbsp; ' + comment['name']
-                          + " &nbsp;&nbsp; --> &nbsp;&nbsp; " + emojify.replace(comment['content']);
-            var child = $('<div/>')[0];
-
-            child.innerHTML = content;
-            $('#messages').prepend($('<li>').append($(child)));
-        }
-
-        $('#refresh_chat_button').click(function(){
-            $.get('/refresh_chat', function(){
-                //alert('刷屏成功！');
-            });
-        });
-
-        $.get('/get_latest_chats', function(data){
-            //console.log(data);
-            if (data['status'] != 0) {
-                return;
-            }
-
-            var comments = data['comments'];
-            for(var i = 0; i < comments.length; i++) {
-                addCommentToUI(JSON.parse(comments[i]));
-            }
-        });
-
-
-        var addUserToUI = function(userInfo) {
-            var newUser = userInfo['user'];
-            console.log('addUserToUI');
-            console.log(newUser);
-            var userid = newUser['Mobile'];
-            var nickName = newUser['NickName'];
-            $('#users').append($('<span>', {'class': 'label label-success user-label', id: userid}).text(nickName));
-        }
-
-        $.get('/get_live_users', function(data) {
-            if (data['status'] != 0) {
-                return;
-            }
-            console.log('get_live_users');
-            console.log(data);
-            var users = data['users'];
-            for(var i = 0; i < users.length; i++) {
-                addUserToUI(users[i]);
-            }
-        });
-
-        var socket = io();
-        $('form').submit(function(){
-            var comment = $('#m').val();
-            var json = {
-                'request': {
-                    'comment': comment,
-                    'song': {'id': songId}
-                },
-                'userInfo': userJson
-            };
-            if (comment == '') {
-                alert('消息不能为空');
-                return false;;
-            }
-            socket.emit('chat message', JSON.stringify(json));
-            $('#m').val('');
-            return false;
-        });
-
-        socket.on('chat message', function(msg){
-            var json = JSON.parse(msg);
-            addCommentToUI(json);
-        });
-        
-        socket.on('connect success', function(msg) {
-            var json = JSON.parse(msg);
-            if (json.status == 0) {
-                var request = {songId: songId, userInfo: userJson, client:  clientJson};
-                socket.emit('join room', JSON.stringify(request));
-            } 
-        });
-        
-        socket.on('newuser', function(msg) {
-            var json = JSON.parse(msg);
-            if (json.status == 0) {
-                var newUser = json['user'];
-                var userid = newUser['Mobile'];
-                var nickName = newUser['NickName'];
-                console.log('newuser = ' + msg);
-
-                //<span class="label label-primary">Primary</span>
-                addUserToUI(json);
-            } 
-        });
-
-        socket.on('user disconnect', function(msg){
-            var json =  msg;
-            console.log('user disconnect: ' + json);
-            if (json.status == 0) {
-                $('#'+json['user']['id']).remove();
-            } 
-        });
-
-        function  refresh_online_people() {
-            $.get( "/get_stat?stream=feiyang", function( data ) {
-                //console.log(data);
-                //var json = JSON.parse(data);
-                if (data['status'] == 0) {
-                    //console.log("chatCount = " + data["result"]["chatCount"]);
-                    var message = "音频在线人数："+ data["result"]["wowzaClientCount"] +"， 聊天在线人数：" + data["result"]["chatCount"];
-                    $('#onlinePeople').html(message);
-                }
-                
-                //$( ".onlinePeople" ).html( data );
-            });
-        }
-        
-
-        refresh_online_people();
-        setInterval(refresh_online_people, 10000); //每隔10s刷新一次
-    </script>
+  <script src="/javascripts/ui_index.js"></script>
 </html>

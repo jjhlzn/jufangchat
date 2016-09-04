@@ -76,9 +76,9 @@ Chat.prototype.get_client_count = function() {
 var find_user_by_mobile = function(mobile, callback) {
     var userid = mobile;
     client.get("nodejs_userinfo_"+userid, function(err, reply){
-        //console.log("find userid = + " + userid + ' contents is ' + reply);
+        
         if (reply != null) {
-           // console.log('find user in redis');
+            console.log("user in redis: " + reply);
             callback(JSON.parse(reply));
             return;
         }
@@ -86,7 +86,6 @@ var find_user_by_mobile = function(mobile, callback) {
         var makeUserJson = function(row) {
             return {
                 NickName: row['NickName'], 
-                NickName1: vsprintf("%10s", [row['NickName']]), 
                 CanChat: row['CanChat'],
                 Mobile: row['Mobile'],
                 CustName: row['CustName']
@@ -133,9 +132,7 @@ Chat.prototype.join = function(socket, msg, Ack) {
     //告诉其他用户有新用户加入
     var that = this;
     find_user_by_mobile(json['userInfo']['userid'], function(userInfo){
-        //加入到redis中
         var result = {user: userInfo, client: json['client']}
-        //client.hset("liveusers", socket.id, JSON.stringify(result), redis.print);
         that.users[socket.id] = result;
         that.io.emit('newuser', JSON.stringify({status: 0, message: '', user: userInfo, client: json['client']}));
     });
@@ -144,9 +141,11 @@ Chat.prototype.join = function(socket, msg, Ack) {
 Chat.prototype.handle_disconnect = function(socket) {
     this.decrease_client();
     var user = this.users[socket.id];
-    delete this.users[socket.id];
+    console.log("handle_disconnect: user is " + JSON.stringify(user));
     if (user && user['user']) {
-        this.io.emit('user disconnect', {status: 0, message: '', user: {id: user['user']['mobile']}});
+        var result = {status: 0, message: '', user: {id: user['user']['Mobile']}};
+        this.io.emit('user disconnect', JSON.stringify(result));
+        delete this.users[socket.id];
     }
 }
 
