@@ -76,9 +76,9 @@ Chat.prototype.get_client_count = function() {
 var find_user_by_mobile = function(mobile, callback) {
     var userid = mobile;
     client.get("nodejs_userinfo_"+userid, function(err, reply){
-        console.log("find userid = + " + userid + ' contents is ' + reply);
+        //console.log("find userid = + " + userid + ' contents is ' + reply);
         if (reply != null) {
-            console.log('find user in redis');
+           // console.log('find user in redis');
             callback(JSON.parse(reply));
             return;
         }
@@ -156,9 +156,9 @@ Chat.prototype.handle_message = function(io, msg, Ack) {
     var checkSong = function(songId, callback) {
         //验证改课是否已经关闭评论
         client.get("nodejs_song_" + songId, function(err, reply){
-            console.log("songinfo  in redis = " + reply);
+            //console.log("songinfo  in redis = " + reply);
             if (reply != null) {
-                console.log('find song in redis');
+                //console.log('find song in redis');
                 //根据找到的纪录进行检查
                 var songInfo = JSON.parse(reply);
                 if (songInfo['CanComment']) {
@@ -170,7 +170,7 @@ Chat.prototype.handle_message = function(io, msg, Ack) {
             }
 
             //从数据库中进行查询
-            db.get_connnection().then(function() {
+            db.get_connection().then(function() {
                 var request = db.get_request();
                 request.stream = true;
                 request.query("select * from BasSong where SongId = " + songId);
@@ -179,7 +179,7 @@ Chat.prototype.handle_message = function(io, msg, Ack) {
                     //将数据设置到redis内存中
                     client.set("nodejs_song_" + songId, JSON.stringify(songInfo));
 
-                    console.log("songInfo.CanComment = " + songInfo.CanComment);
+                    //console.log("songInfo.CanComment = " + songInfo.CanComment);
                     if (songInfo.CanComment) {
                         callback();
                     }
@@ -196,7 +196,7 @@ Chat.prototype.handle_message = function(io, msg, Ack) {
         var userid = json['userInfo']['userid'];
         //检查该用户是否被禁言
         if (!userInfo['CanChat']) {
-            console.log('user ' + userid + " can't chat");
+            console.log('INFO: user ' + userid + " can't chat");
             return;
         }
 
@@ -216,6 +216,7 @@ Chat.prototype.handle_message = function(io, msg, Ack) {
         });
         //把聊天发送到所有的sockets
         io.emit('chat message', jsonString);
+        console.log(userid + "--" + userInfo['NickName'] + " said: " + comment);
         if (Ack) {
             Ack(true)
         }

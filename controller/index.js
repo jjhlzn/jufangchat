@@ -37,11 +37,14 @@ module.exports.set = function(app, io) {
       
         //console.log('user connected, client count = ' + chat.get_client_count());
         //console.log('socket.id = ' + socket.id);
+        chat.increase_client();
+        console.log("new user connected, current user count: " + chat.get_client_count());
         
+        /*
         socket.on('join room', function(msg, Ack){
             console.log('get join room request');
             chat.join(socket, msg, Ack);
-        });
+        }); */
 
         socket.on('chat message', function(msg, Ack){
            chat.handle_message(io, msg, Ack);
@@ -51,6 +54,7 @@ module.exports.set = function(app, io) {
             //console.log('user disconnected');
             //chat.decrease_client();
             chat.handle_disconnect(socket);
+            console.log("user left, current user count: " + chat.get_client_count());
         });
         
         socket.emit('connect success', JSON.stringify({status: 0, message: ''}));

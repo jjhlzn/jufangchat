@@ -10,14 +10,14 @@ var config = {
     pool: {
         max: 10,
         min: 0,
-        idleTimeoutMillis: 5000
+        idleTimeoutMillis: 30000
     }
 };
 
 module.exports.get_connection = function() {
-    var conn = sql.connect(config);
     //conn.on('error', function(err){console.log(err);});
-    return conn;
+    //console.log('connect = ' + sql.connect(config));
+    return  sql.connect(config);
 }
 
 module.exports.get_request = function() {
