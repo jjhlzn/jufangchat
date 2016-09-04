@@ -125,7 +125,6 @@ var find_user_by_mobile = function(mobile, callback) {
 
 
 Chat.prototype.join = function(socket, msg, Ack) {
-    this.increase_client();
     var json = JSON.parse(msg);
     this.users[socket.id] = json['userInfo'];
     socket.emit('joinResult', JSON.stringify({status: 0, message: ''}));
