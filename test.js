@@ -22,6 +22,6 @@ function testOne() {
   });
 }
 
-for (var i = 0; i < 15; i++) {
+for (var i = 0; i < 8; i++) {
   testOne();
 }
