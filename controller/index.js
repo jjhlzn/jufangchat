@@ -40,11 +40,11 @@ module.exports.set = function(app, io) {
         chat.increase_client();
         console.log("new user connected, current user count: " + chat.get_client_count());
         
-        /*
+        
         socket.on('join room', function(msg, Ack){
             console.log('get join room request');
             chat.join(socket, msg, Ack);
-        }); */
+        }); 
 
         socket.on('chat message', function(msg, Ack){
            chat.handle_message(io, msg, Ack);
