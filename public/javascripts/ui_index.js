@@ -54,7 +54,7 @@ $('#users').jstree({
                 }],
             'check_callback': true
         },
-        "plugins" : ["contextmenu"],
+        "plugins" : ["contextmenu", "search"],
         "contextmenu": {
             "items": function (node) {
                 return {
@@ -77,48 +77,12 @@ $('#users').jstree({
         }
     });
 
-/*
-$('#users').jstree({
-    'core': {
-        'data': {
-            'url': '/get_live_users',
-            'dataType': 'json',
-            'check_callback': true
-        }
-    },
-    "plugins" : ["contextmenu"],
-    "contextmenu": {
-        "items": function (node) {
-            return {
-                "forbideChat": {
-                    "label": "禁言",
-                    "action": function (obj) {
-                        console.log(node);
-                        var mobile = node.id;
-                        sendSetChatRequest(mobile, 1);
-                    }
-                },
-                "canChat": {
-                    "label": "不禁言",
-                    "action": function (obj) {
-                        sendSetChatRequest(node.id, 0);
-                    }
-                },
-            };
-        }
-    }
-}).bind("loaded.jstree", function () {
-    //alert('loaded');
-});*/
-
 $('#refresh_chat_button').click(function(){
     $.get('/refresh_chat', function(){
-        //alert('刷屏成功！');
     });
 });
 
 $.get('/get_latest_chats', function(data){
-    //console.log(data);
     if (data['status'] != 0) {
         return;
     }
@@ -232,6 +196,18 @@ $('#users').on('ready.jstree', function (e, data) {
             changeUserColor(users[i]);
         }
     });
+
+
+
+
+  var to = false;
+  $('#searchInput').keyup(function () {
+    if(to) { clearTimeout(to); }
+    to = setTimeout(function () {
+      var v = $('#searchInput').val();
+      $('#users').jstree(true).search(v);
+    }, 250);
+  });
 
     
 });
