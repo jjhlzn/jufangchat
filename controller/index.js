@@ -1,11 +1,8 @@
-var sql = require('mssql')
-var redis = require("redis");
 var queryString = queryString = require('querystring');
 
 var Chat = require('./chat');
 var chat;
 
-var client = redis.createClient({detect_buffers: true, host: 'jf.yhkamani.com', port: 7777});
 
 module.exports.set = function(app, io) {
     chat = new Chat(io);

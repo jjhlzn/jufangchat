@@ -1,7 +1,7 @@
 {
-  "name": "socket-chat-example",
+  "name": "jufang_chat",
   "version": "0.0.1",
-  "description": "my first socket.io app",
+  "description": "jufang chat backend",
   "dependencies": {
     "emojify": "^1.0.0",
     "emojify.js": "^1.1.0",
@@ -11,6 +11,12 @@
     "mssql": "^3.3.0",
     "redis": "^2.6.2",
     "sprintf-js": "^1.0.3",
-    "dateformat": "^1.0.3"
+    "dateformat": "^1.0.3",
+    "request-digest": "^1.0.5",
+    "xml2js": "^0.4.17",
+    "serve-static": "^1.11.1",
+    "morgan": "^1.7.0",
+    "request": "^2.74.0",
+    "socket.io-client": "^1.4.8"
   }
 }
