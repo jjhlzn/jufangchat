@@ -33,6 +33,13 @@ module.exports.set = function(app, io) {
         chat.get_live_users(songId, req, res);
     });
 
+    app.get('/setchat', function(req, res) {
+        var userid = queryString.parse(req.url.replace(/^.*\?/, ''))['userid'];
+        var canChat = queryString.parse(req.url.replace(/^.*\?/, ''))['canchat'];
+        console.log('userid = ' + userid + ', canChat = ' + canChat);
+        chat.setChat(userid, canChat, req, res);
+    });
+
     io.on('connection', function(socket){
       
         //console.log('user connected, client count = ' + chat.get_client_count());

@@ -5,6 +5,7 @@ var dateFormat = require('dateformat');
 var wowza = require('./wowza_client');
 var sprintf = require("sprintf-js").sprintf;
 var vsprintf = require("sprintf-js").vsprintf;
+var request = require('request');
 
 var Chat = function(io) {
     this.io = io;
@@ -126,7 +127,6 @@ var find_user_by_mobile = function(mobile, callback) {
 
 Chat.prototype.join = function(socket, msg, Ack) {
     var json = JSON.parse(msg);
-    this.users[socket.id] = json['userInfo'];
     socket.emit('joinResult', JSON.stringify({status: 0, message: ''}));
     //告诉其他用户有新用户加入
     var that = this;
@@ -268,6 +268,18 @@ Chat.prototype.get_latest_chats = function(songId, req, res) {
 };
 
 //获取在线聊天的用户
+/*
+Chat.prototype.get_live_users = function(songId, req, res) {
+    res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
+    var result = [{id: 'title_node', text: '在线人员'}];
+    for (var id in this.users) {
+        var user = this.users[id];
+        console.log(this.users[id]);
+        var label = user['user']['Mobile']+'('+user['user']['NickName']+', ' + user['client']['platform']+')';
+        result.push({id: user['user']['Mobile'], 'text': label, 'class': 'nochat'});
+    }
+    res.end(JSON.stringify(result));
+};*/
 Chat.prototype.get_live_users = function(songId, req, res) {
     res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
     var result = [];
@@ -276,4 +288,36 @@ Chat.prototype.get_live_users = function(songId, req, res) {
     }
     res.end(JSON.stringify({status: 0, message: '', users: result}));
 }
+
+
+//设置用户是否禁言
+Chat.prototype.setChat = function(userid, canChat, req, res) {
+    var that = this;
+    request.post( {
+         uri: 'http://jf.yhkamani.com/app/SetCanChat',
+         method: 'POST',
+         json: { 
+            userInfo: {token: '', userid: userid},
+            request: {CanChat: canChat}
+         }},
+        function (error, response, body) {
+            res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
+            if (!error && response.statusCode == 200) {
+                for(var key in that.users) {
+                    var userInfo = that.users[key]['user'];
+                    console.log(userInfo);
+                    if (userInfo && (userInfo['Mobile'] === userid)) {
+                        
+                        that.users[key]['user']['CanChat'] = canChat == 0 ? true : false;
+                        console.log(userid+" can chat is " + that.users[key]['user']['CanChat'] );
+                        break;
+                    }
+                }
+                res.end(JSON.stringify(body));
+            } else {
+                res.end(JSON.stringify({status: -1, errorMessage: ""}));
+            }
+        }
+    );
+};
 exports = module.exports = Chat;

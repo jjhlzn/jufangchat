@@ -8,9 +8,8 @@ var getQueryString = function(name) {
     }
     return null;
 }
-// 这样调用：
-var mobile = getQueryString("mobile") || '13706794299';
-//alert("mobile = " + mobile);
+var mobile = getQueryString("mobile") || '15158913567';
+var streamName = getQueryString("stream") || "feiyang";
 
 var clientJson = {
             appversion: "1.0",
@@ -22,6 +21,24 @@ var clientJson = {
 var userJson = {
     'userid': mobile,
     'token': 'xyz'          
+};
+
+var sendSetChatRequest = function(userid, canChat) {
+    $.get(
+        '/setchat?userid='+userid+'&canchat='+canChat,
+        function(data) {
+            console.log(data);
+            var json = data;
+            if (json['status'] == 0) {
+                if (canChat === 0) {
+                   $('#'+userid).css('color', 'black');
+                } else {
+                    $('#'+userid).css('color', 'red');
+                }
+                alert('操作成功');
+            }
+        }
+    )
 };
 
 $('#users').jstree({
@@ -36,8 +53,63 @@ $('#users').jstree({
                     "children": []
                 }],
             'check_callback': true
+        },
+        "plugins" : ["contextmenu"],
+        "contextmenu": {
+            "items": function (node) {
+                return {
+                    "forbideChat": {
+                        "label": "禁言",
+                        "action": function (obj) {
+                            console.log(node);
+                            var mobile = node.id;
+                            sendSetChatRequest(mobile, 1);
+                        }
+                    },
+                    "canChat": {
+                        "label": "不禁言",
+                        "action": function (obj) {
+                            sendSetChatRequest(node.id, 0);
+                        }
+                    },
+                };
+            }
         }
     });
+
+/*
+$('#users').jstree({
+    'core': {
+        'data': {
+            'url': '/get_live_users',
+            'dataType': 'json',
+            'check_callback': true
+        }
+    },
+    "plugins" : ["contextmenu"],
+    "contextmenu": {
+        "items": function (node) {
+            return {
+                "forbideChat": {
+                    "label": "禁言",
+                    "action": function (obj) {
+                        console.log(node);
+                        var mobile = node.id;
+                        sendSetChatRequest(mobile, 1);
+                    }
+                },
+                "canChat": {
+                    "label": "不禁言",
+                    "action": function (obj) {
+                        sendSetChatRequest(node.id, 0);
+                    }
+                },
+            };
+        }
+    }
+}).bind("loaded.jstree", function () {
+    //alert('loaded');
+});*/
 
 $('#refresh_chat_button').click(function(){
     $.get('/refresh_chat', function(){
@@ -59,9 +131,8 @@ $.get('/get_latest_chats', function(data){
 
 var sequence = 0;
 function addCommentToUI(comment) {
-
-    var content = comment['time'] + '  &nbsp;&nbsp; ' + comment['name']
-                    + " &nbsp;&nbsp; --> &nbsp;&nbsp; " + emojify.replace(comment['content']);
+    var content = comment['time'] + '  &nbsp;&nbsp; ' + comment['name'] 
+               + " &nbsp;&nbsp; --> &nbsp;&nbsp; " + emojify.replace(comment['content']);
     var child = $('<div/>')[0];
 
     child.innerHTML = content;
@@ -102,24 +173,38 @@ socket.on('connect success', function(msg) {
 
 var addUserToUI = function(userInfo) {
     var newUser = userInfo['user'];
-    //console.log('addUserToUI');
+    var client = userInfo['client'];
+    console.log('addUserToUI');
     console.log(newUser);
     var userid = newUser['Mobile'];
     var nickName = newUser['NickName'];
+    var platform = client['platform'];
     if ($('#'+userid).length == 0) {
-        $("#users").jstree().create_node(null, {text: userid+'('+nickName+')', id: userid} , "last", false, false );
+        var label = userid+'('+nickName+', ' + platform+')';
+        $("#users").jstree(true).create_node($('#root_node'), {text: label, id: userid} , "last", false, true );
+        if (!newUser['CanChat']) {
+            console.log(userid + " can't chat" );
+            $('#'+userid).css('color', 'red');
+        }
     }
 }
 
+var changeUserColor = function(userInfo) {
+    var newUser = userInfo['user'];
+    var userid = newUser['Mobile'];
+    console.log('changeUserColor');
+    console.log(newUser);
+
+    if (!newUser['CanChat']) {
+        console.log(userid + " can't chat" );
+        $('#'+userid).css('color', 'red');
+    }
+    
+}
 
 socket.on('newuser', function(msg) {
     var json = JSON.parse(msg);
     if (json.status == 0) {
-        var newUser = json['user'];
-        var userid = newUser['Mobile'];
-        var nickName = newUser['NickName'];
-        console.log('newuser = ' + msg);
-        //<span class="label label-primary">Primary</span>
         addUserToUI(json);
     } 
 });
@@ -127,42 +212,39 @@ socket.on('newuser', function(msg) {
 socket.on('user disconnect', function(msg){
     var json =  JSON.parse(msg);
     console.log('user disconnect: ' + JSON.stringify(json));
-    
     if (json.status == 0) {
         $('#users').jstree().delete_node($('#' + json['user']['id']));
     } 
 });
+$('#users').on('ready.jstree', function (e, data) {
+    $.get('/get_live_users', function(data) {
+        console.log(data);
+        if (data['status'] != 0) {
+            return;
+        }
+        console.log('get_live_uers');
+        var users = data['users'];
+        for(var i = 0; i < users.length; i++) {
+            addUserToUI(users[i]);
+        }
 
-$.get('/get_live_users', function(data) {
-    if (data['status'] != 0) {
-        return;
-    }
-    console.log('get_live_users');
-    console.log(data);
-    var users = data['users'];
-    for(var i = 0; i < users.length; i++) {
-        addUserToUI(users[i]);
-    }
+        for(var i = 0; i < users.length; i++) {
+            changeUserColor(users[i]);
+        }
+    });
+
+    
 });
 
 function  refresh_online_people() {
-    $.get( "/get_stat?stream=feiyang", function( data ) {
-        //console.log(data);
-        //var json = JSON.parse(data);
+    $.get( "/get_stat?stream="+streamName, function( data ) {
         if (data['status'] == 0) {
-            //console.log("chatCount = " + data["result"]["chatCount"]);
             var message = "音频在线人数："+ data["result"]["wowzaClientCount"] +"， 聊天在线人数：" + data["result"]["chatCount"];
             $('#onlinePeople').html(message);
         }
-        
-        //$( ".onlinePeople" ).html( data );
     });
 }
 
-
-
-//$('#users').jstree('create_node', $('#base_directory'), 
-//{ "text":'tst', "id":'test' }, 'last', false, false);	
 
 refresh_online_people();
 setInterval(refresh_online_people, 10000); //每隔10s刷新一次
