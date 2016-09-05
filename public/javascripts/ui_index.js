@@ -95,9 +95,11 @@ $.get('/get_latest_chats', function(data){
 
 var sequence = 0;
 function addCommentToUI(comment) {
-    var content = comment['time'] + '  &nbsp;&nbsp; ' + comment['name'] 
-               + " &nbsp;&nbsp; --> &nbsp;&nbsp; " + emojify.replace(comment['content']);
-    var child = $('<div/>')[0];
+    var content =  "<span style='width: 80px; display: block; float: left;'>" + comment['time']  + '</span>'
+                 + "<span style='width: 250px; display: block; float: left'>" + comment['userId'] +'('  +comment['name'] + ')'  + '</span>'
+                 + "<span style='width: 50px; display: block; float: left'>" + '--> &nbsp;&nbsp;&nbsp;'  + '</span>'
+                 + "<span style='display: block; float: left'>" + emojify.replace(comment['content']) + '</span>';
+    var child = $('<div/>',{style: 'clear: both; height: 20px;'})[0];
 
     child.innerHTML = content;
     $('#messages').prepend($('<li>').append($(child)));
