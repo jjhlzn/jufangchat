@@ -189,6 +189,7 @@ Chat.prototype.handle_message = function(socket, io, msg, Ack) {
         var songId = json['request']['song']['id'];
         var userid = json['userInfo']['userid'];
         var appversion = json['client'] && json['client']['appversion'];
+        var platform =   json['client'] && json['client']['platform'];
         //检查该用户是否被禁言
         if (!userInfo['CanChat']) {
             console.log('INFO: user ' + userid + " can't chat");
@@ -211,7 +212,7 @@ Chat.prototype.handle_message = function(socket, io, msg, Ack) {
         //这里需要根据版本号，对Ack以及如何处理socket进行区分。
         //1. 以前的版本，需要回传所有人（包括他本人）信息
         //2. 之后的版本，不需要回传本人。本人只要得到ACK响应，就可以显示信息。
-        if (appversion >= '1.1.3' ) {
+        if (appversion >= '1.1.3' && platform == 'android') {
             if (Ack) {
                 Ack(true)
             }
