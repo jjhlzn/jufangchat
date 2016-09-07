@@ -148,15 +148,13 @@ Chat.prototype.handle_disconnect = function(socket) {
     }
 }
 
-Chat.prototype.handle_message = function(io, msg, Ack) {
+Chat.prototype.handle_message = function(socket, io, msg, Ack) {
     //参数：用户信息、请求的json, Ack
     //该函数检查课程是否被禁言，如果没有被禁言，调用func进行处理
     var checkSong = function(songId, callback) {
         //验证改课是否已经关闭评论
         client.get("nodejs_song_" + songId, function(err, reply){
-            //console.log("songinfo  in redis = " + reply);
             if (reply != null) {
-                //console.log('find song in redis');
                 //根据找到的纪录进行检查
                 var songInfo = JSON.parse(reply);
                 if (songInfo['CanComment']) {
@@ -176,8 +174,6 @@ Chat.prototype.handle_message = function(io, msg, Ack) {
                     var songInfo = {SongId: row['SongId'], CanComment: row['CanComment'] == 1}
                     //将数据设置到redis内存中
                     client.set("nodejs_song_" + songId, JSON.stringify(songInfo));
-
-                    //console.log("songInfo.CanComment = " + songInfo.CanComment);
                     if (songInfo.CanComment) {
                         callback();
                     }
@@ -192,6 +188,7 @@ Chat.prototype.handle_message = function(io, msg, Ack) {
         var comment = json['request']['comment'];
         var songId = json['request']['song']['id'];
         var userid = json['userInfo']['userid'];
+        var appversion = json['client'] && json['client']['appversion'];
         //检查该用户是否被禁言
         if (!userInfo['CanChat']) {
             console.log('INFO: user ' + userid + " can't chat");
@@ -204,19 +201,28 @@ Chat.prototype.handle_message = function(io, msg, Ack) {
             'time': dateFormat(Date.now(), 'HH:MM:ss'),
             'userId': userid,
             'name': userInfo['NickName'],
-            'name1': userInfo['NickName1'],
             'isManager': false
         };
 
         var jsonString = JSON.stringify(resp);
         //将请求保存到redis中
-        client.rpush(['livecomments', jsonString], function(err, reply) {
-        });
-        //把聊天发送到所有的sockets
-        io.emit('chat message', jsonString);
-        console.log(userid + "--" + userInfo['NickName'] + " said: " + comment);
-        if (Ack) {
-            Ack(true)
+        client.rpush(['livecomments', jsonString], function(err, reply) {});
+
+        //这里需要根据版本号，对Ack以及如何处理socket进行区分。
+        //1. 以前的版本，需要回传所有人（包括他本人）信息
+        //2. 之后的版本，不需要回传本人。本人只要得到ACK响应，就可以显示信息。
+        if (appversion >= '1.1.3' ) {
+            if (Ack) {
+                Ack(true)
+            }
+            console.log(userid + "--" + userInfo['NickName'] + " said: " + comment);
+            socket.broadcast.emit('chat message', jsonString);
+        } else {
+            io.emit('chat message', jsonString);
+            console.log(userid + "--" + userInfo['NickName'] + " said: " + comment);
+            if (Ack) {
+                Ack(true)
+            }
         }
     };
 
@@ -267,19 +273,6 @@ Chat.prototype.get_latest_chats = function(songId, req, res) {
     });
 };
 
-//获取在线聊天的用户
-/*
-Chat.prototype.get_live_users = function(songId, req, res) {
-    res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
-    var result = [{id: 'title_node', text: '在线人员'}];
-    for (var id in this.users) {
-        var user = this.users[id];
-        console.log(this.users[id]);
-        var label = user['user']['Mobile']+'('+user['user']['NickName']+', ' + user['client']['platform']+')';
-        result.push({id: user['user']['Mobile'], 'text': label, 'class': 'nochat'});
-    }
-    res.end(JSON.stringify(result));
-};*/
 Chat.prototype.get_live_users = function(songId, req, res) {
     res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
     var result = [];

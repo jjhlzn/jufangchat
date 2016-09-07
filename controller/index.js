@@ -51,7 +51,7 @@ module.exports.set = function(app, io) {
         }); 
 
         socket.on('chat message', function(msg, Ack){
-           chat.handle_message(io, msg, Ack);
+           chat.handle_message(socket, io, msg, Ack);
         });
 
         socket.on('disconnect', function(){
