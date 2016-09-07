@@ -15,7 +15,7 @@ var Chat = function(io) {
 
 var client = redis.createClient({
     detect_buffers: true, 
-    host: 'jf.yhkamani.com', 
+    host: 'chat.yhkamani.com', 
     port: 7777,
     retry_strategy: function (options) {
         if (options.error.code === 'ECONNREFUSED') {
