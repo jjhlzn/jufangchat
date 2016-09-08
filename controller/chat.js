@@ -206,8 +206,7 @@ Chat.prototype.handle_message = function(socket, io, msg, Ack) {
         };
 
         var jsonString = JSON.stringify(resp);
-        //将请求保存到redis中
-        client.rpush(['livecomments', jsonString], function(err, reply) {});
+        
 
         //这里需要根据版本号，对Ack以及如何处理socket进行区分。
         //1. 以前的版本，需要回传所有人（包括他本人）信息
@@ -225,6 +224,8 @@ Chat.prototype.handle_message = function(socket, io, msg, Ack) {
                 Ack(true)
             }
         }
+        //将请求保存到redis中
+        client.rpush(['livecomments', jsonString], function(err, reply) {});
     };
 
     //console.log(msg);
