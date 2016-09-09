@@ -211,7 +211,7 @@ Chat.prototype.handle_message = function(socket, io, msg, Ack) {
         //这里需要根据版本号，对Ack以及如何处理socket进行区分。
         //1. 以前的版本，需要回传所有人（包括他本人）信息
         //2. 之后的版本，不需要回传本人。本人只要得到ACK响应，就可以显示信息。
-        if (appversion >= '1.1.3' && platform == 'android') {
+        if ((appversion >= '1.1.3' && platform == 'android') || (appversion >= '1.0.49' && platform == 'iphone')) {
             if (Ack) {
                 Ack(true)
             }
