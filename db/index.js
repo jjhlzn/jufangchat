@@ -1,10 +1,19 @@
 var sql = require('mssql');
 
+var dbUrl = '';
+
+if (process.env.NODE_ENV == 'production') {
+    
+    dbUrl = '10.45.52.93';
+} else {
+    dbUrl = 'jf.yhkamani.com';
+}
+
 //数据库配置信息
 var config = {
     user: 'jf',
     password: '#Jufang2016!@#',
-    server: 'jf.yhkamani.com', // You can use 'localhost\\instance' to connect to named instance
+    server: dbUrl, // You can use 'localhost\\instance' to connect to named instance
     port: 9433,
     database: 'Jufang',
     pool: {

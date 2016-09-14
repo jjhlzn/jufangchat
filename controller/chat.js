@@ -13,9 +13,16 @@ var Chat = function(io) {
     this.users = {};
 }
 
+var redisUrl = '';
+if (process.env.NODE_ENV == 'production') {
+    redisUrl = '10.45.52.93';
+} else {
+    redisUrl = 'jf.yhkamani.com';
+}
+
 var client = redis.createClient({
     detect_buffers: true, 
-    host: 'jf.yhkamani.com', 
+    host: redisUrl, 
     port: 7777,
     retry_strategy: function (options) {
         if (options.error.code === 'ECONNREFUSED') {
