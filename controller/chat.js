@@ -13,34 +13,7 @@ var Chat = function(io) {
     this.users = {};
 }
 
-var redisUrl = '';
-if (process.env.NODE_ENV == 'production') {
-    redisUrl = '10.45.52.93';
-} else {
-    redisUrl = 'jf.yhkamani.com';
-}
-
-var client = redis.createClient({
-    detect_buffers: true, 
-    host: redisUrl, 
-    port: 7777,
-    retry_strategy: function (options) {
-        if (options.error.code === 'ECONNREFUSED') {
-            // End reconnecting on a specific error and flush all commands with a individual error
-            return new Error('The server refused the connection');
-        }
-        if (options.total_retry_time > 1000 * 60 * 60) {
-            // End reconnecting after a specific timeout and flush all commands with a individual error
-            return new Error('Retry time exhausted');
-        }
-        if (options.times_connected > 10) {
-            // End reconnecting with built in error
-            return undefined;
-        }
-        // reconnect after
-        return Math.max(options.attempt * 100, 3000);
-    }
-});
+var client =  db.get_redis_client();
 
 Chat.prototype.next_id = function() {
     var now = new Date();
@@ -51,8 +24,8 @@ Chat.prototype.next_id = function() {
     return hour * 10000000 + minute * 100000 + second * 1000 + millisecond;
 };
 
-var comment_list = ['a', 'b', 'c', 'd', 'e', 'f'];
-var user_info_list = ['jjh', 'lzn', 'zhang'];
+var comment_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', '1', '1', '2', 'x'];
+var user_info_list = ['jjh', 'lzn', 'zhang', '匿名', 'lool'];
 
 Chat.prototype.get_random_response = function() {
     var comment = comment_list[Math.ceil(Math.random() * 100 % (comment_list.length - 1))];
@@ -86,7 +59,7 @@ var find_user_by_mobile = function(mobile, callback) {
     client.get("nodejs_userinfo_"+userid, function(err, reply){
         
         if (reply != null) {
-            console.log("user in redis: " + reply);
+            //console.log("user in redis: " + reply);
             callback(JSON.parse(reply));
             return;
         }
@@ -140,6 +113,8 @@ Chat.prototype.join = function(socket, msg, Ack) {
     find_user_by_mobile(json['userInfo']['userid'], function(userInfo){
         var result = {user: userInfo, client: json['client']}
         that.users[socket.id] = result;
+        socket.userId = json['userInfo']['userid'];
+        console.log(userInfo['Mobile'] + '-' + userInfo['NickName'] + ' join in room');
         that.io.emit('newuser', JSON.stringify({status: 0, message: '', user: userInfo, client: json['client']}));
     });
 }
@@ -155,9 +130,11 @@ Chat.prototype.handle_disconnect = function(socket) {
     }
 }
 
-Chat.prototype.handle_message = function(socket, io, msg, Ack) {
+Chat.prototype.handle_message = function(socket, publisher, io, msg, Ack) {
     //参数：用户信息、请求的json, Ack
     //该函数检查课程是否被禁言，如果没有被禁言，调用func进行处理
+    var start = new Date();
+     
     var checkSong = function(songId, callback) {
         //验证改课是否已经关闭评论
         client.get("nodejs_song_" + songId, function(err, reply){
@@ -215,24 +192,17 @@ Chat.prototype.handle_message = function(socket, io, msg, Ack) {
         var jsonString = JSON.stringify(resp);
         
 
-        //这里需要根据版本号，对Ack以及如何处理socket进行区分。
-        //1. 以前的版本，需要回传所有人（包括他本人）信息
-        //2. 之后的版本，不需要回传本人。本人只要得到ACK响应，就可以显示信息。
-        if ((appversion >= '1.1.3' && platform == 'android') || (appversion >= '1.0.1.49' && platform == 'iphone')) {
-            if (Ack) {
-                Ack(true)
-            }
-            console.log(userid + "--" + userInfo['NickName'] + " said: " + comment);
-            socket.broadcast.emit('chat message', jsonString);
-        } else {
-            io.emit('chat message', jsonString);
-            console.log(userid + "--" + userInfo['NickName'] + " said: " + comment);
-            if (Ack) {
-                Ack(true)
-            }
+        publisher.publish('main_chat_room', jsonString);
+        console.log(userid + "--" + userInfo['NickName'] + " said: " + comment);
+        if (Ack) {
+            Ack(true)
         }
+        var end = new Date();
+        console.log("chat message handle time: " + (end - start) / 1000 + 'ms');
+
         //将请求保存到redis中
         client.rpush(['livecomments', jsonString], function(err, reply) {});
+        
     };
 
     //console.log(msg);
