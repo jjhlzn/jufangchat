@@ -121,6 +121,13 @@ $('form').submit(function(){
     }
     socket.emit('chat message', JSON.stringify(json));
     $('#m').val('');
+    addCommentToUI({
+            'content': comment,
+            'id': 1,
+            'time': '刚刚',
+            'userId': mobile,
+            'name': '我',
+            'isManager': false});
     return false;
 });
 

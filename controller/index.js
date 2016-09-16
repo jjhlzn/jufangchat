@@ -1,6 +1,7 @@
 var queryString = queryString = require('querystring');
 
 var Chat = require('./chat');
+var db = require('../db');
 var chat;
 
 
@@ -38,27 +39,37 @@ module.exports.set = function(app, io) {
     });
 
     io.on('connection', function(socket){
-      
-        //console.log('user connected, client count = ' + chat.get_client_count());
-        //console.log('socket.id = ' + socket.id);
+        var sub = db.get_redis_client(), pub = db.get_redis_client();
+        sub.subscribe('main_chat_room');
+
         chat.increase_client();
-        console.log("new user connected, current user count: " + chat.get_client_count());
-        
+        console.log("new user connected, current user count: " 
+                        + chat.get_client_count());
         
         socket.on('join room', function(msg, Ack){
-            console.log('get join room request');
             chat.join(socket, msg, Ack);
         }); 
 
         socket.on('chat message', function(msg, Ack){
-           chat.handle_message(socket, io, msg, Ack);
+           chat.handle_message(socket, pub, io, msg, Ack);
         });
 
         socket.on('disconnect', function(){
-            //console.log('user disconnected');
-            //chat.decrease_client();
             chat.handle_disconnect(socket);
-            console.log("user left, current user count: " + chat.get_client_count());
+            sub.unsubscribe();
+            sub.quit();
+            pub.quit();
+            console.log("user left, current user count: " 
+                        + chat.get_client_count());
+        });
+
+        sub.on("message", function (channel, message) {
+            var json = JSON.parse(message);
+            //console.log("message: " + message);
+            //console.log("socket.userId = " + socket.userId );
+            if (socket.userId != json.userId ) {
+                socket.emit('chat message', message);
+            }
         });
         
         socket.emit('connect success', JSON.stringify({status: 0, message: ''}));
