@@ -40,6 +40,12 @@ module.exports.set = function(app, io) {
 
     io.on('connection', function(socket){
         var sub = db.get_redis_client(), pub = db.get_redis_client();
+        sub.on('error', function(err){
+            console.log(err);
+        });
+        pub.on('error', function(err){
+            console.log(err);
+        })
         sub.subscribe('main_chat_room');
 
         chat.increase_client();
