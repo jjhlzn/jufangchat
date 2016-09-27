@@ -186,7 +186,7 @@ Chat.prototype.handle_message = function(socket, publisher, io, msg, Ack) {
             'time': dateFormat(Date.now(), 'HH:MM:ss'),
             'userId': userid,
             'name': userInfo['NickName'],
-            'isManager': true
+            'isManager': false
         };
 
         var jsonString = JSON.stringify(resp);
