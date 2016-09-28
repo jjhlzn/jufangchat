@@ -1,5 +1,3 @@
-var songId = 14;
-
 var getQueryString = function(name) {
     var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)', 'i');
     var r = window.location.search.substr(1).match(reg);
@@ -10,6 +8,7 @@ var getQueryString = function(name) {
 }
 var mobile = getQueryString("mobile") || '15158913567';
 var streamName = getQueryString("stream") || "feiyang";
+var songId = getQueryString("songid") || 14; 
 
 var clientJson = {
             appversion: "1.0",

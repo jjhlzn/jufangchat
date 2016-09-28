@@ -34,9 +34,8 @@ Chat.prototype.get_random_response = function() {
           'content': comment,
           'id': this.next_id(),
           'time': dateFormat(Date.now(), 'HH:MM:ss'),
-          'userId': '13706794299',
+          'userId': '15167910871',
           'name': userInfo,
-          'name1': vsprintf("%10s", [userInfo]),
           'isManager': false
       };
 };
@@ -69,7 +68,8 @@ var find_user_by_mobile = function(mobile, callback) {
                 NickName: row['NickName'], 
                 CanChat: row['CanChat'],
                 Mobile: row['Mobile'],
-                CustName: row['CustName']
+                CustName: row['CustName'],
+                ManagerFlg: row['ManagerFlg']
             };
         };
         
@@ -93,6 +93,13 @@ var find_user_by_mobile = function(mobile, callback) {
                     canChat = false;
                 }
                 row['CanChat'] = canChat;
+                
+                var isManager = row['ManagerFlg'];
+                if (isManager == null || isManager == undefined) {
+                    isManager = false;
+                }
+                row['ManagerFlg'] = isManager;
+                console.log('ManagerFlg = ' + row['ManagerFlg']);
                 //console.log(row);
                 var userJson = makeUserJson(row);
                 client.set("nodejs_userinfo_"+userid, JSON.stringify(userJson));
@@ -179,14 +186,15 @@ Chat.prototype.handle_message = function(socket, publisher, io, msg, Ack) {
             console.log('INFO: user ' + userid + " can't chat");
             return;
         }
-
+        //console.log(userInfo);
+        //console.log('ManagerFlg = ' + userInfo['ManagerFlg']);
         var resp = {
             'content': comment,
             'id': new Chat().next_id(),
             'time': dateFormat(Date.now(), 'HH:MM:ss'),
             'userId': userid,
             'name': userInfo['NickName'],
-            'isManager': false
+            'isManager': userInfo['ManagerFlg'] || false
         };
 
         var jsonString = JSON.stringify(resp);
@@ -220,8 +228,7 @@ Chat.prototype.refresh_chat = function(req, res) {
     for (var i = 0; i < 5; i ++) {
         var resp = this.get_random_response();
         var jsonString = JSON.stringify(resp);
-        client.rpush(['livecomments', jsonString], function(err, reply) {
-        });
+        client.rpush(['livecomments', jsonString], function(err, reply) {});
         this.io.emit('chat message', jsonString);
     }
     res.end('refresh success');
