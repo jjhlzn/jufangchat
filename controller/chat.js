@@ -98,6 +98,11 @@ var find_user_by_mobile = function(mobile, callback) {
                 if (isManager == null || isManager == undefined) {
                     isManager = false;
                 }
+                if (isManager == 1 || isManager == true) {
+                    isManager = true;
+                } else {
+                    isManager = false;
+                }
                 row['ManagerFlg'] = isManager;
                 console.log('ManagerFlg = ' + row['ManagerFlg']);
                 //console.log(row);
