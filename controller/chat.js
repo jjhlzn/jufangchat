@@ -208,7 +208,7 @@ Chat.prototype.handle_message = function(socket, publisher, io, msg, Ack) {
         publisher.publish('main_chat_room', jsonString);
         console.log(userid + "--" + userInfo['NickName'] + " said: " + comment);
         if (Ack) {
-            Ack(true)
+            Ack({status: 0, errorMessage: ''})
         }
         var end = new Date();
         console.log("chat message handle time: " + (end - start) / 1000 + 'ms');
