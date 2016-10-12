@@ -38,6 +38,13 @@ module.exports.set = function(app, io) {
         chat.setChat(userid, canChat, req, res);
     });
 
+    app.get('/getliveusers', function(req, res) {
+        var userid = queryString.parse(req.url.replace(/^.*\?/, ''))['userid'];
+        var children = chat.getChildUsers(userid);
+        res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
+        res.end(JSON.stringify({status: 0, errorMessage: '', children: children}));
+    });
+
     io.on('connection', function(socket){
         var sub = db.get_redis_client(), pub = db.get_redis_client();
         sub.on('error', function(err){

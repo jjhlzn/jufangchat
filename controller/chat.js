@@ -6,14 +6,97 @@ var wowza = require('./wowza_client');
 var sprintf = require("sprintf-js").sprintf;
 var vsprintf = require("sprintf-js").vsprintf;
 var request = require('request');
+var TreeModel = require('tree-model');
+var tree = new TreeModel();
 
 var Chat = function(io) {
     this.io = io;
     this.clientCount = 0;
     this.users = {};
+    this.userTreeRoot = tree.parse({Mobile: 'root', PCustCd: 'root'});
 }
 
 var client =  db.get_redis_client();
+
+Chat.prototype.addUser = function(user, callback) {
+    var myNode = this.userTreeRoot.first(function (node) {
+        return node.model.Mobile === user['Mobile']; 
+    });
+    if (myNode) {
+        if (callback) {
+            callback();
+        }
+        return;
+    }
+    
+    //console.log('-------------------------------------------------');
+    //console.log('addUser called');
+    //console.log(user);
+    if (user.PCustCd === 'T00000') {
+        console.log("add user " + user['Mobile'] + 'to tree');
+        this.userTreeRoot.addChild(tree.parse(user));
+        if (callback) {
+            callback();
+        }
+        return;
+    }
+    var parentNode = this.userTreeRoot.first(function (node) {
+        return node.model.Mobile === user['ParentMobile']; 
+    });
+    var that = this;
+    if (!parentNode) {
+        find_user_by_mobile(user['ParentMobile'], function(parentUser) {
+            that.addUser(parentUser, function() {
+                that.addUser(user);
+                if (callback) {
+                    callback();
+                }
+            });
+        })
+    } else {
+        //console.log(parentNode);
+        parentNode.addChild(tree.parse(user));
+        if (callback) {
+            callback();
+        }
+    }
+};
+
+Chat.prototype.removeUser = function(user) {
+    var result = this.userTreeRoot.first(function (node) {
+        return node.model.Mobile === user["Mobile"]; 
+    });
+    if (result) {
+        result.drop();
+    }
+ };
+
+ Chat.prototype.getChildUsers = function(mobile) {
+     /*
+     this.userTreeRoot.walk(function (node) {
+        // Halt the traversal by returning false
+        console.log(node.model['Mobile']);
+    });*/
+    
+     var result = this.userTreeRoot.first(function (node) {
+        return node.model.Mobile === mobile; 
+    });
+    console.log(result);
+    if (!result) {
+        return [];
+    }
+    var resultUsers = [];
+    for (var i = 0; i < result.children.length; i++) {
+        var son = result.children[i];
+        resultUsers.push(son.model);
+        for (var j = 0; j < son.children; j++) {
+            var sunzi = son.children[j];
+            resultUsers.push(sunzi.model);
+        }
+    }
+    console.log(resultUsers);
+    return resultUsers;
+ }
 
 Chat.prototype.next_id = function() {
     var now = new Date();
@@ -69,14 +152,17 @@ var find_user_by_mobile = function(mobile, callback) {
                 CanChat: row['CanChat'],
                 Mobile: row['Mobile'],
                 CustName: row['CustName'],
-                ManagerFlg: row['ManagerFlg']
+                ManagerFlg: row['ManagerFlg'],
+                PCustCd: row['PCustCd'],
+                ParentMobile: row['ParentMobile']
             };
         };
         
         db.get_connection().then(function() {
             var request = db.get_request();
             request.stream = true;
-            request.query("select * from BasCust where mobile = '" + userid + "'");
+            request.query("select *, (select Mobile from BasCust b where a.PCustCd = b.CustCd) as ParentMobile  from BasCust a where mobile = '"
+                          + userid + "'");
             request.on('row', function(row){
                 //将昵称和是否能发言放到redis中
                 var nickName = row['NickName'];
@@ -125,6 +211,9 @@ Chat.prototype.join = function(socket, msg, Ack) {
     find_user_by_mobile(json['userInfo']['userid'], function(userInfo){
         var result = {user: userInfo, client: json['client']}
         that.users[socket.id] = result;
+        //add user to tree model
+        that.addUser(userInfo);
+
         socket.userId = json['userInfo']['userid'];
         console.log(userInfo['Mobile'] + '-' + userInfo['NickName'] + ' join in room');
         that.io.emit('newuser', JSON.stringify({status: 0, message: '', user: userInfo, client: json['client']}));
@@ -138,6 +227,8 @@ Chat.prototype.handle_disconnect = function(socket) {
     if (user && user['user']) {
         var result = {status: 0, message: '', user: {id: user['user']['Mobile']}};
         this.io.emit('user disconnect', JSON.stringify(result));
+        //delete user from tree model
+        this.removeUser(this.users[socket.id])
         delete this.users[socket.id];
     }
 }
