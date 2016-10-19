@@ -96,11 +96,13 @@ Chat.prototype.removeUser = function(user) {
     var resultUsers = [];
     for (var i = 0; i < result.children.length; i++) {
         var son = result.children[i];
+        console.log(son.model['Mobile'] + " is Online = " + son.model['isOnline']);
         if (son.model['isOnline']) {
             resultUsers.push(son.model);
         }
         for (var j = 0; j < son.children; j++) {
             var sunzi = son.children[j];
+            console.log(sunzi.model['Mobile'] + " is Online = " + sunzi.model['isOnline']);
             if (sunzi.model['isOnline']) {
                 resultUsers.push(sunzi.model);
             }
