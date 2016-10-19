@@ -19,22 +19,23 @@ var Chat = function(io) {
 var client =  db.get_redis_client();
 
 Chat.prototype.addUser = function(user, callback) {
+    //已经在树中
     var myNode = this.userTreeRoot.first(function (node) {
         return node.model.Mobile === user['Mobile']; 
     });
     if (myNode) {
-        if (callback) {
-            callback();
-        }
         if (user['isOnline']) {
             myNode.model['isOnline'] = true;
+        }
+        console.log(user['Mobile'] + " is Online = " + myNode.model['isOnline']);
+
+        if (callback) {
+            callback();
         }
         return;
     }
     
-    //console.log('-------------------------------------------------');
-    //console.log('addUser called');
-    //console.log(user);
+    //是顶级节点
     if (user.PCustCd === 'T00000') {
         console.log("add user " + user['Mobile'] + 'to tree');
         this.userTreeRoot.addChild(tree.parse(user));
@@ -43,11 +44,14 @@ Chat.prototype.addUser = function(user, callback) {
         }
         return;
     }
+
+
     var parentNode = this.userTreeRoot.first(function (node) {
         return node.model.Mobile === user['ParentMobile']; 
     });
     var that = this;
-    if (!parentNode) {
+
+    if (!parentNode) { //没有父亲节点
         find_user_by_mobile(user['ParentMobile'], function(parentUser) {
             that.addUser(parentUser, function() {
                 that.addUser(user);
@@ -56,7 +60,7 @@ Chat.prototype.addUser = function(user, callback) {
                 }
             });
         })
-    } else {
+    } else {  //油父亲节点
         //console.log(parentNode);
         parentNode.addChild(tree.parse(user));
         if (callback) {
