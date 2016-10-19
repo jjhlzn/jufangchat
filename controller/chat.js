@@ -67,7 +67,8 @@ Chat.prototype.removeUser = function(user) {
         return node.model.Mobile === user["Mobile"]; 
     });
     if (result) {
-        result.drop();
+        //result.drop();
+        user['isOnline'] = false;
     }
  };
 
@@ -88,10 +89,14 @@ Chat.prototype.removeUser = function(user) {
     var resultUsers = [];
     for (var i = 0; i < result.children.length; i++) {
         var son = result.children[i];
-        resultUsers.push(son.model);
+        if (son.model['isOnline']) {
+            resultUsers.push(son.model);
+        }
         for (var j = 0; j < son.children; j++) {
             var sunzi = son.children[j];
-            resultUsers.push(sunzi.model);
+            if (sunzi.model['isOnline']) {
+                resultUsers.push(sunzi.model);
+            }
         }
     }
     console.log(resultUsers);
@@ -212,6 +217,7 @@ Chat.prototype.join = function(socket, msg, Ack) {
         var result = {user: userInfo, client: json['client']}
         that.users[socket.id] = result;
         //add user to tree model
+        userInfo['isOnline'] = true;
         that.addUser(userInfo);
 
         socket.userId = json['userInfo']['userid'];
@@ -228,6 +234,7 @@ Chat.prototype.handle_disconnect = function(socket) {
         var result = {status: 0, message: '', user: {id: user['user']['Mobile']}};
         this.io.emit('user disconnect', JSON.stringify(result));
         //delete user from tree model
+        this.users[socket.id]['isOnline'] = false;
         this.removeUser(this.users[socket.id])
         delete this.users[socket.id];
     }
