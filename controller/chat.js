@@ -37,7 +37,7 @@ Chat.prototype.addUser = function(user, callback) {
     
     //是顶级节点
     if (user.PCustCd === 'T00000') {
-        console.log("add user " + user['Mobile'] + 'to tree');
+        console.log("add user " + user['Mobile'] + ' to tree');
         this.userTreeRoot.addChild(tree.parse(user));
         if (callback) {
             callback();
@@ -62,6 +62,7 @@ Chat.prototype.addUser = function(user, callback) {
         })
     } else {  //油父亲节点
         //console.log(parentNode);
+        console.log("add user " + user['Mobile'] + ' to tree');
         parentNode.addChild(tree.parse(user));
         if (callback) {
             callback();
@@ -73,14 +74,17 @@ Chat.prototype.removeUser = function(user) {
     var result = this.userTreeRoot.first(function (node) {
         return node.model.Mobile === user["Mobile"]; 
     });
+    console.log('removeuser ' + user['Mobile']);
+    console.log(result);
     if (result) {
         //result.drop();
-        user['isOnline'] = false;
+        console.log("set " + result.model['Mobile'] + " Online to false");
+        result.model['isOnline'] = false;
     }
  };
 
  Chat.prototype.getChildUsers = function(mobile) {
-     /*
+    /*
      this.userTreeRoot.walk(function (node) {
         // Halt the traversal by returning false
         console.log(node.model['Mobile']);
@@ -100,7 +104,7 @@ Chat.prototype.removeUser = function(user) {
         if (son.model['isOnline']) {
             resultUsers.push(son.model);
         }
-        for (var j = 0; j < son.children; j++) {
+        for (var j = 0; j < son.children.length; j++) {
             var sunzi = son.children[j];
             console.log(sunzi.model['Mobile'] + " is Online = " + sunzi.model['isOnline']);
             if (sunzi.model['isOnline']) {
@@ -243,8 +247,7 @@ Chat.prototype.handle_disconnect = function(socket) {
         var result = {status: 0, message: '', user: {id: user['user']['Mobile']}};
         this.io.emit('user disconnect', JSON.stringify(result));
         //delete user from tree model
-        this.users[socket.id]['isOnline'] = false;
-        this.removeUser(this.users[socket.id])
+        this.removeUser(this.users[socket.id]['user']);
         delete this.users[socket.id];
     }
 }
