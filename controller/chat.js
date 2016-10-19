@@ -26,6 +26,7 @@ Chat.prototype.addUser = function(user, callback) {
         if (callback) {
             callback();
         }
+        myNode.model['isOnline'] = true;
         return;
     }
     
