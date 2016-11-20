@@ -1,13 +1,16 @@
 
-var redis = require("redis");
-var db = require('../db');
-var dateFormat = require('dateformat');
-var wowza = require('./wowza_client');
-var sprintf = require("sprintf-js").sprintf;
-var vsprintf = require("sprintf-js").vsprintf;
-var request = require('request');
-var TreeModel = require('tree-model');
-var tree = new TreeModel();
+const redis = require("redis");
+const db = require('../db');
+const dateFormat = require('dateformat');
+const wowza = require('./wowza_client');
+const request = require('request');
+const TreeModel = require('tree-model');
+const tree = new TreeModel();
+
+
+class Test {
+    
+}
 
 var Chat = function(io) {
     this.io = io;
