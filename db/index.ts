@@ -1,9 +1,12 @@
-var sql = require('mssql');
-var redis = require("redis");
+import { request } from 'http';
+import * as console from 'console';
+const sql = require('mssql');
+const redis = require("redis");
 
 var dbUrl = '';
 var redisUrl = '';
 if (process.env.NODE_ENV == 'production') {
+    //production 使用内网地址
     dbUrl = '10.45.52.93';
     redisUrl = '10.45.52.93';
 } else {
@@ -29,7 +32,7 @@ var redisConfig = {
     detect_buffers: true, 
     host: redisUrl, 
     port: 7777,
-    retry_strategy: function (options) {
+    retry_strategy: function (options): any {
         if (options.error.code === 'ECONNREFUSED') {
             // End reconnecting on a specific error and flush all commands with a individual error
             return new Error('The server refused the connection');
@@ -45,18 +48,24 @@ var redisConfig = {
         // reconnect after
         return Math.max(options.attempt * 100, 3000);
     }
-}
+};
 
-module.exports.get_connection = function() {
+export function get_connection() {
     //conn.on('error', function(err){console.log(err);});
     //console.log('connect = ' + sql.connect(config));
-    return  sql.connect(config);
+    const conn =  sql.connect(config);
+   
+    return conn;
+}
+
+export function get_request() {
+    const request = new sql.Request();
+    request.on('error', function(err){
+        console.error("error: ", err);
+    })
+    return request;
 };
 
-module.exports.get_request = function() {
-    return new sql.Request();
-};
-
-module.exports.get_redis_client = function() {
+export function get_redis_client() {
     return redis.createClient(redisConfig);
 }

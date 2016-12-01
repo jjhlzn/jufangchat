@@ -230,5 +230,5 @@ function  refresh_online_people() {
 }
 
 
-refresh_online_people();
-setInterval(refresh_online_people, 10000); //每隔10s刷新一次
+//refresh_online_people();
+//setInterval(refresh_online_people, 10000); //每隔10s刷新一次

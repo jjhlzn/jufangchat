@@ -1,0 +1,23 @@
+<div class="chat">
+  <chat-summary></chat-summary>
+  <div class="chat-history" id="chat-history">
+    <ul>
+      <li *ngFor="let message of messages" class="clearfix">
+        <div class="message-data align-right">
+          <span class="message-data-time">{{message.time}}</span> &nbsp; &nbsp;
+          <span class="message-data-name">{{message.speaker}}</span> <i class="fa fa-circle me"></i>
+        </div>
+        <div class="message other-message float-right" [innerHTML]="message.content | emojiPipe">
+
+        </div>
+      </li>
+    </ul>
+  </div>
+
+<form >
+  <div class="chat-message clearfix">
+      <textarea name="message-to-send" id="message-to-send" [(ngModel)]="inputMessage" placeholder="请输入消息" rows="3"></textarea>
+      <button (click)="onSubmit()">发送</button>
+    </div>
+</form>
+</div>
