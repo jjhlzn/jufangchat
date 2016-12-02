@@ -22,7 +22,10 @@ export class ChatRouter {
 
         var self = this;
 
-        this.router.get('/', (req, res) => res.sendFile('/Users/jinjunhang/projects/jufangchat/client/index.html'));
+        this.router.get('/', (req, res) => { 
+            console.log(__dirname);
+            res.sendFile(path.join(path.join(__dirname, '../'), 'client/index.html'));
+        });
 
         this.router.get('/refresh_chat', (req, res) => this.chat.refresh_chat(req, res));
 

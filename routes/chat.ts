@@ -20,7 +20,7 @@ export class Chat {
     constructor(io) {
         this.io = io;
         this.clientCount = 0;
-        this.users = {};
+        this.users = {};    
         this.userTreeRoot = tree.parse({Mobile: 'root', PCustCd: 'root'});
     }
 

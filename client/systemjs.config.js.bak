@@ -3,14 +3,14 @@
   var map = {
     'app': 'app',
     '@angular': '@angular',
-    'rxjs': 'rxjs'//,
-     //"socket.io-client": "socket.io-client/socket.io.js"
+    'rxjs': 'rxjs',
+     "socket.io-client": "socket.io-client/socket.io.js"
   };
   // packages tells the System loader how to load when no filename and/or no extension
   var packages = {
     'app': { main: 'main.js',  defaultExtension: 'js' },
-    'rxjs': { defaultExtension: 'js' }//,
-    //"socket.io-client": {"defaultExtension": "js"}
+    'rxjs': { defaultExtension: 'js' },
+    "socket.io-client": {"defaultExtension": "js"}
   };
   var ngPackageNames = [
     'common',

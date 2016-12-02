@@ -7,8 +7,8 @@ const moment = require('moment/moment.js');
 
 @Component({ 
   selector: "message-list",
-  templateUrl: "/app/views/messages.html",
-  styleUrls: [ 'app/css/messages.css'], 
+  templateUrl: "../views/messages.html",
+  styleUrls: [ '../css/messages.css'], 
   encapsulation: ViewEncapsulation.None,
 })
 export class MessagesComponent {

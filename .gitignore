@@ -1,5 +1,7 @@
 
-node_modules/*
-bower_components/*
-build/*
-dist/*
+node_modules/
+bower_components/
+build/
+dist/
+server.ts
+.DS_Store

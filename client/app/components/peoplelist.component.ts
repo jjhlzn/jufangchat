@@ -5,8 +5,8 @@ import { UserService } from "../services/user.service";
 
 @Component({
   selector: 'people-list',
-  templateUrl: '/app/views/peoplelist.html',
-  styleUrls: ['app/css/peoplelist.css']
+  templateUrl: '../views/peoplelist.html',
+  styleUrls: ['../css/peoplelist.css']
 })
 export class PeopleListComponent {
   people: User[] = new Array<User>();

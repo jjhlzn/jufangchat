@@ -10,10 +10,13 @@ const path = require('path');
 const port = normalizePort(process.env.PORT || 3000);
 const application = new App(io, app);
 
+console.log(__dirname);
+
 app.use(express.static(path.join(__dirname, 'client')));
+app.use(express.static(path.join(path.join(__dirname, '../'), 'client/')));
+app.use(express.static(path.join(path.join(__dirname, '../'), 'client/public')));
 app.use(express.static(path.join(path.join(__dirname, '../'), 'node_modules')));
-app.use(express.static(path.join(path.join(__dirname, '../'), 'client')));
-app.use(express.static(path.join(path.join(__dirname, '../client'), 'public')));
+app.use(express.static(path.join(path.join(__dirname, '../'), 'node_modules/font-awesome')));
 
 http.listen(port);
 http.on('error', onError);
