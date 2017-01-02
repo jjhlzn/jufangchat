@@ -39,9 +39,16 @@ export class ChatRouter {
             self.chat.get_latest_chats(songId, req, res);
         });
 
+        //获取全部在线人员信息
         this.router.get('/get_live_users', function(req, res) {
             var songId = queryString.parse(req.url.replace(/^.*\?/, ''))['songid'];
             self.chat.get_live_users(songId, req, res);
+        });
+
+        //获取全部在线人员的手机号
+        this.router.get('/get_all_live_user_mobiles', function(req, res) {
+            var songId = queryString.parse(req.url.replace(/^.*\?/, ''))['songid'];
+            self.chat.get_all_live_user_mobiles(songId, req, res);
         });
 
         this.router.get('/setchat', function(req, res) {

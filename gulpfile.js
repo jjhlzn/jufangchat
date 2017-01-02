@@ -30,26 +30,10 @@ gulp.task('compile-ts', ['compile:server', 'compile:client']);
  * Compile TypeScript sources and create sourcemaps in build directory.
  */
 gulp.task("compile:client", () => {
-    //var tsProject = tsc.createProject('client/tsconfig.json');
-   // var tsResult = gulp.src('client/**/*.ts')
-    //    .pipe(sourcemaps.init())
-    //    .pipe(tsProject());
-   // return tsResult.js
-    //    .pipe(sourcemaps.write())
-    //    .pipe(gulp.dest('build/client'));
     return gulp.src('client/**')
         .pipe(webpack( require('./webpack.config.js') ))
         .pipe(gulp.dest('./build/client'));
 });
-
-/*
-gulp.task('webpack', (cb) => {
-    exec('npm run build:client', (err, stdout, stderr) => {
-        console.log(stdout);
-        console.log(stderr);
-        cb(err);
-    })
-});*/
 
 
 /**

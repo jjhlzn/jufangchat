@@ -1,4 +1,6 @@
-import { EmojiPipe } from "../emoji.pipe";
+
+
+import { EmojiPipe } from "./emoji.pipe";
 
 describe("EmojiPipe", () => {
 

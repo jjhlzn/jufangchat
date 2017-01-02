@@ -386,6 +386,16 @@ export class Chat {
         res.end(JSON.stringify({status: 0, message: '', users: result}));
     }
 
+    get_all_live_user_mobiles(songId, req, res) {
+        res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
+        var result = new Set();
+        for (var id in this.users) {
+            console.log("mobile:", this.users[id].user.Mobile)
+            result.add(this.users[id].user.Mobile);
+        }
+        res.end(JSON.stringify({status: 0, message: '', users: Array.from(result)}));
+    }
+
     //设置用户是否禁言
    setChat(userid, canChat, req, res) {
         var that = this;

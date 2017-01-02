@@ -1,12 +1,82 @@
+<!doctype html>
 <html>
   <head>
-    <title>巨方</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 85%; margin-right: .5%; }
+      form button { width: 14%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 15px; }
+      #messages li:nth-child(odd) { background: #eee; }
+
+      .emoji {
+            width: 1.5em;
+            height: 1.5em;
+            display: inline-block;
+            margin-bottom: -0.25em;
+      }
+
+      .user-label {
+          margin: 0 10px 0 0;
+      }
+
+      #refresh_chat_button { 
+         margin: 5px;
+      }
+
+      #onlinePeople {
+         font: 15px Helvetica, Arial ;
+      }
+
+      #messages {
+          float: left;
+          width: 50%;
+      }
+
+      #infoDiv {
+          margin: 0 5px 0 0;
+      }
+
+      #usersDiv {
+      }
+
+    </style>
+
+    <!-- <script src="/socket.io/socket.io.js"></script> -->
+    <script src="/socket.io-client/socket.io.js"></script> 
+    <script src="/jquery/dist/jquery.js"></script>
+    <script src="/emojify.js/dist/js/emojify.js"></script>
+    <script src="/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="/jstree/dist/jstree.min.js"></script>
+
+    <link rel="stylesheet" href="/jstree/dist/themes/default/style.min.css" />
+    <link rel="stylesheet" href="/emojify.js/dist/css/basic/emojify.css"></script>
+    <link rel="stylesheet" href="/bootstrap/dist/css/bootstrap.css"></script>
+    
   </head>
+
   <body>
-    <div class="container clearfix">
-      <jufang-app>Loading...</jufang-app>
+    <div> 
+        <ul id="messages"></ul>
+        <div> 
+            <div id="infoDiv"> 
+                <p id='onlinePeople'> 音频在线人数：0人， 聊天在线人数：0人</p>   
+                <p> <button class="btn btn-primary" id='refresh_chat_button'>刷屏</button> </p>
+                搜索： <input type='text' id='searchInput' />
+                <div id='users'>
+                </div> 
+            </div>
+         </div>
     </div>
     
+    <form id='form1' action="">
+      <input id="m" autocomplete="off" /><button class="btn btn-primary">发送</button>
+    </form>
   </body>
+
+
+  <script src="/javascripts/ui_index.js"></script>
 </html>
