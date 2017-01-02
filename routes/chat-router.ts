@@ -24,7 +24,9 @@ export class ChatRouter {
 
         this.router.get('/', (req, res) => { 
             console.log(__dirname);
-            res.sendFile(path.join(path.join(__dirname, '../'), 'client/index.html'));
+            var pathurl = path.join(path.join(__dirname, '../'), 'client/index.html');
+            console.log("path:", pathurl);
+            res.sendFile(pathurl);
         });
 
         this.router.get('/refresh_chat', (req, res) => this.chat.refresh_chat(req, res));

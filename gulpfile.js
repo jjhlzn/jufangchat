@@ -1,7 +1,7 @@
 /**
  * Created by Moiz.Kachwala on 08-06-2016.
  */
-"use strict";
+//"use strict";
 
 const gulp = require("gulp"),
     del = require("del"),
