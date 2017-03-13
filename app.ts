@@ -2,6 +2,7 @@ import * as express from 'express';
 import * as logger from 'morgan';
 import * as bodyParser from 'body-parser';
 import { ChatRouter } from './routes/chat-router';
+import { NotifyRouter } from './routes/notify-router';
 
 
 // Creates and configures an ExpressJS web server.
@@ -37,6 +38,9 @@ export class App {
     let chatRouter = new ChatRouter(this.io);
     //chatRouter.init();
     this.express.use('/', chatRouter.router);
+
+    let notifyRouter = new NotifyRouter();
+    this.express.use('/notify/', notifyRouter.router);
     
   }
 

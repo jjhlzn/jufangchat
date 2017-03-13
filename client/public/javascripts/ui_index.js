@@ -81,7 +81,7 @@ $('#refresh_chat_button').click(function(){
     });
 });
 
-$.get('/get_latest_chats', function(data){
+$.get('/get_latest_chats?songid='+songId, function(data){
     if (data['status'] != 0) {
         return;
     }
@@ -189,7 +189,7 @@ socket.on('user disconnect', function(msg){
     } 
 });
 $('#users').on('ready.jstree', function (e, data) {
-    $.get('/get_live_users', function(data) {
+    $.get('/get_live_users?songid='+songId, function(data) {
         console.log(data);
         if (data['status'] != 0) {
             return;

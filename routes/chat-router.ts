@@ -78,17 +78,19 @@ export class ChatRouter {
                 console.log(err);
             });
 
-            sub.subscribe('main_chat_room');
-
+            //TODO：使用redis保存用户数，并且将房间人数统计分开
             self.chat.increase_client();
-            console.log("new user connected, current user count: " 
-                            + self.chat.get_client_count());
+            console.log("new user connected, current user count: "  + self.chat.get_client_count());
             
             socket.on('join room', function(msg, Ack){
+                const json = JSON.parse(msg);
+                const songId = json.songId;
+                console.log("subscribe room: " + songId);
+                sub.subscribe('main_chat_room_'+songId);
+                //join room的msg带有是哪个房间的id
                 console.log("join room message: ", msg);
                 console.log("---------------------------");
                 //JSON.parse(msg);
-                console.log("---------------------------");
                 self.chat.join(socket, msg, Ack);
             }); 
 

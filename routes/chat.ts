@@ -1,5 +1,6 @@
 import * as redis from 'redis';
 import * as db from '../db/index';
+import { find_user_by_mobile } from './user-dao';
 const dateFormat = require('dateformat');
 const wowza = require('./wowza_client');
 const request = require('request');
@@ -34,7 +35,7 @@ export class Chat {
                 myNode.model['isOnline'] = true;
             }
             console.log(user['Mobile'] + " is Online = " + myNode.model['isOnline']);
-    
+            myNode.model['songId'] = user.songId;
             if (callback) {
                 callback();
             }
@@ -58,7 +59,7 @@ export class Chat {
         var that = this;
     
         if (!parentNode) { //没有父亲节点
-            this.find_user_by_mobile(user['ParentMobile'], function(parentUser) {
+            find_user_by_mobile(user['ParentMobile'], function(parentUser) {
                 that.addUser(parentUser, function() {
                     that.addUser(user, null);
                     if (callback) {
@@ -66,7 +67,7 @@ export class Chat {
                     }
                 });
             })
-        } else {  //油父亲节点
+        } else {  //有父亲节点
             //console.log(parentNode);
             console.log("add user " + user['Mobile'] + ' to tree');
             parentNode.addChild(tree.parse(user));
@@ -151,91 +152,34 @@ export class Chat {
         return this.clientCount;
     }
 
-    find_user_by_mobile(mobile, callback) {
-        var userid = mobile;
-        client.get("nodejs_userinfo_"+userid, function(err, reply){
-            
-            if (reply != null) {
-                //console.log("user in redis: " + reply);
-                callback(JSON.parse(reply));
-                return;
-            }
     
-            var makeUserJson = function(row) {
-                return {
-                    NickName: row['NickName'], 
-                    CanChat: row['CanChat'],
-                    Mobile: row['Mobile'],
-                    CustName: row['CustName'],
-                    ManagerFlg: row['ManagerFlg'],
-                    PCustCd: row['PCustCd'],
-                    ParentMobile: row['ParentMobile']
-                };
-            };
-            
-            db.get_connection().then(function() {
-                var request = db.get_request();
-                request.stream = true;
-                request.query("select *, (select Mobile from BasCust b where a.PCustCd = b.CustCd) as ParentMobile  from BasCust a where mobile = '"
-                              + userid + "'");
-                request.on('row', function(row){
-                    //将昵称和是否能发言放到redis中
-                    var nickName = row['NickName'];
-                    var canChat = row['CanChat'];
-                    if (nickName == null || nickName == undefined){
-                        nickName = '匿名';
-                    }
-                    row['NickName'] = nickName;
-                    if (canChat == null || canChat == undefined) {
-                        canChat = true;
-                    } else if (canChat == 0) {
-                        canChat = true;
-                    } else if (canChat == 1) {
-                        canChat = false;
-                    }
-                    row['CanChat'] = canChat;
-                    
-                    var isManager = row['ManagerFlg'];
-                    if (isManager == null || isManager == undefined) {
-                        isManager = false;
-                    }
-                    if (isManager == 1 || isManager == true) {
-                        isManager = true;
-                    } else {
-                        isManager = false;
-                    }
-                    row['ManagerFlg'] = isManager;
-                    console.log('ManagerFlg = ' + row['ManagerFlg']);
-                    //console.log(row);
-                    var userJson = makeUserJson(row);
-                    client.set("nodejs_userinfo_"+userid, JSON.stringify(userJson));
-                    callback(userJson);
-                });
-            }).catch(function(err) {
-                console.log(err);
-            }); 
-        });
-    }
-
+    //用户加入聊天房间
     join(socket, msg, Ack) {
         var json = JSON.parse(msg);
+        const songId = json.songId;
         //var json = msg;
         socket.emit('joinResult', JSON.stringify({status: 0, message: ''}));
         //告诉其他用户有新用户加入
         var that = this;
-        this.find_user_by_mobile(json['userInfo']['userid'], function(userInfo){
+        find_user_by_mobile(json['userInfo']['userid'], function(userInfo){
             var result = {user: userInfo, client: json['client']}
+             //用户信息中放入songId，是用于判断该用户进入的是哪个房间。
+            userInfo.songId = songId;  
+
             that.users[socket.id] = result;
             //add user to  tree model
             userInfo['isOnline'] = true;
+
             that.addUser(userInfo, null);
     
             socket.userId = json['userInfo']['userid'];
+            socket.songId = json.SongId;
             console.log(userInfo['Mobile'] + '-' + userInfo['NickName'] + ' join in room');
             that.io.emit('newuser', JSON.stringify({status: 0, message: '', user: userInfo, client: json['client']}));
         });
     }
 
+    //处理连接断开
     handle_disconnect(socket) {
         this.decrease_client();
         var user = this.users[socket.id];
@@ -249,6 +193,7 @@ export class Chat {
         }
     }
 
+    //处理发送消息
     handle_message(socket, publisher, io, msg, Ack) {
         //参数：用户信息、请求的json, Ack
         //该函数检查课程是否被禁言，如果没有被禁言，调用func进行处理
@@ -289,7 +234,7 @@ export class Chat {
             });
         }
     
-        //根据这些信息，把消息发给所有连接到的socket
+        //根据这些信息，把消息发给所有连接到的socket （修改：发送给这个用户所在的房间）
         var sendResponse = function(io, userInfo, json, Ack) {
             //console.log(userInfo);
             var comment = json['request']['comment'];
@@ -316,16 +261,16 @@ export class Chat {
             var jsonString = JSON.stringify(resp);
             
     
-            publisher.publish('main_chat_room', jsonString);
-            console.log(userid + "--" + userInfo['NickName'] + " said: " + comment);
+            publisher.publish('main_chat_room_'+songId, jsonString);
+
             if (Ack) {
                 Ack({status: 0, errorMessage: ''})
             }
             var end = new Date();
             console.log("chat message handle time: " + (end.getMilliseconds() - start.getMilliseconds()) + 'ms');
     
-            //将请求保存到redis中
-            client.rpush(['livecomments', jsonString], function(err, reply) {});
+            //将请求保存到redis中 （修改：将消息保存到用户所在房间的聊天列表中）
+            client.rpush(['livecomments_'+songId, jsonString], function(err, reply) {});
             
         };
     
@@ -335,17 +280,18 @@ export class Chat {
         var self = this;
         checkSong(songId, function() {
             var userid = json['userInfo']['userid'];
-            console.info("this: ", this);
-            self.find_user_by_mobile(userid, function(userInfo){
+            find_user_by_mobile(userid, function(userInfo){
                 sendResponse(io, userInfo, json, Ack);
             });
         });
     }
-
+    
+    //刷入随机聊天记录
     refresh_chat(req, res) {
         for (var i = 0; i < 5; i ++) {
             var resp = this.get_random_response();
             var jsonString = JSON.stringify(resp);
+            //TODO：需要知道刷入哪个房间
             client.rpush(['livecomments', jsonString], function(err, reply) {});
             this.io.emit('chat message', jsonString);
         }
@@ -363,7 +309,8 @@ export class Chat {
 
     //获取最新的40条聊天记录
     get_latest_chats(songId, req, res) {
-        client.lrange('livecomments', -50, -1, function(err, replies) { 
+        console.log("get_latest_chats: songid = " + songId)
+        client.lrange('livecomments_'+songId, -50, -1, function(err, replies) { 
             var result = {};
             res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
             if (err) {
@@ -381,7 +328,9 @@ export class Chat {
         res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
         var result = [];
         for (var id in this.users) {
-            result.push(this.users[id]);
+            if (songId === this.users[id].user.songId) {
+                result.push(this.users[id]);
+            }
         }
         res.end(JSON.stringify({status: 0, message: '', users: result}));
     }
@@ -390,7 +339,6 @@ export class Chat {
         res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
         var result = new Set();
         for (var id in this.users) {
-            console.log("mobile:", this.users[id].user.Mobile)
             result.add(this.users[id].user.Mobile);
         }
         res.end(JSON.stringify({status: 0, message: '', users: Array.from(result)}));
