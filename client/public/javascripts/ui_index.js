@@ -43,7 +43,7 @@ var sendSetChatRequest = function(userid, canChat) {
 };
 
 $("#selectCourse").change(function(){
-    window.location.href = "http://localhost:3000?mobile="+mobile+"&streamName="+streamName+"&songId="+$('#selectCourse').val();
+    window.location.href = "http://chat.yhkamani.com?mobile="+mobile+"&streamName="+streamName+"&songId="+$('#selectCourse').val();
 });
 
 $('#users').jstree({
