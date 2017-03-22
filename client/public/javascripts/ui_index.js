@@ -1,6 +1,7 @@
 var getQueryString = function(name) {
     var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)', 'i');
     var r = window.location.search.substr(1).match(reg);
+    console.log("r = ", r);
     if (r != null) {
         return unescape(r[2]);
     }
@@ -9,6 +10,7 @@ var getQueryString = function(name) {
 var mobile = getQueryString("mobile") || '15158913567';
 var streamName = getQueryString("stream") || "feiyang";
 var songId = getQueryString("songid") || 14; 
+$("#selectCourse").val(songId);
 
 var clientJson = {
             appversion: "1.0",
@@ -39,6 +41,10 @@ var sendSetChatRequest = function(userid, canChat) {
         }
     )
 };
+
+$("#selectCourse").change(function(){
+    window.location.href = "http://localhost:3000?mobile="+mobile+"&streamName="+streamName+"&songId="+$('#selectCourse').val();
+});
 
 $('#users').jstree({
         'core': {
