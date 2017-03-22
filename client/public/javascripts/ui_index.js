@@ -144,7 +144,7 @@ socket.on('chat message', function(msg){
 socket.on('connect success', function(msg) {
     var json = JSON.parse(msg);
     if (json.status == 0) {
-        var request = {songId: songId, userInfo: userJson, client:  clientJson};
+        var request = {request: {id: songId}, userInfo: userJson, client:  clientJson};
         socket.emit('join room', JSON.stringify(request));
     } 
 });

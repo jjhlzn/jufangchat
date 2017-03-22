@@ -84,7 +84,8 @@ export class ChatRouter {
             
             socket.on('join room', function(msg, Ack){
                 const json = JSON.parse(msg);
-                const songId = json.songId;
+                console.log("json: ", json);
+                const songId = json.request.id;
                 console.log("subscribe room: " + songId);
                 sub.subscribe('main_chat_room_'+songId);
                 //join room的msg带有是哪个房间的id
@@ -110,8 +111,9 @@ export class ChatRouter {
 
             sub.on("message", function (channel, message) {
                 var json = JSON.parse(message);
-                //console.log("message: " + message);
-                //console.log("socket.userId = " + socket.userId );
+                console.log("message: " + message);
+                console.log("socket.userId = " + socket.userId );
+                console.log("json.userId = " + json.userId );
                 if (socket.userId != json.userId ) {
                     socket.emit('chat message', message);
                 }
