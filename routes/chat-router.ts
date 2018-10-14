@@ -79,8 +79,7 @@ export class ChatRouter {
             });
 
             //TODO：使用redis保存用户数，并且将房间人数统计分开
-            self.chat.increase_client();
-            console.log("new user connected, current user count: "  + self.chat.get_client_count());
+            //console.log("new user connected, current user count: "  + self.chat.get_client_count());
             
             socket.on('join room', function(msg, Ack){
                 const json = JSON.parse(msg);
@@ -105,8 +104,7 @@ export class ChatRouter {
                 sub.unsubscribe();
                 sub.quit();
                 pub.quit();
-                console.log("user left, current user count: " 
-                            + self.chat.get_client_count());
+                //console.log("user left, current user count: " + self.chat.get_client_count());
             });
 
             sub.on("message", function (channel, message) {

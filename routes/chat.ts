@@ -1,6 +1,6 @@
 import * as redis from 'redis';
 import * as db from '../db/index';
-import { find_user_by_mobile } from './user-dao';
+import { find_user_by_mobile, LiveUserManager } from './user-dao';
 const dateFormat = require('dateformat');
 const wowza = require('./wowza_client');
 const request = require('request');
@@ -14,15 +14,21 @@ const client =  db.get_redis_client();
 
 export class Chat {
     io: any;
-    clientCount: number;
-    users: any;
+
+    liveUserManager : LiveUserManager
+
+    //clientCount: number;
+    //users 应该存储到数据库redis中。
+    //users: any;
+
     userTreeRoot: any;
 
     constructor(io) {
         this.io = io;
-        this.clientCount = 0;
-        this.users = {};    
+        //this.clientCount = 0;
+        //this.users = {};    
         this.userTreeRoot = tree.parse({Mobile: 'root', PCustCd: 'root'});
+        this.liveUserManager = new LiveUserManager()
     }
 
     addUser(user, callback) {
@@ -140,6 +146,7 @@ export class Chat {
           };
     }
 
+    /*
     increase_client() {
         this.clientCount++;
     }
@@ -150,7 +157,7 @@ export class Chat {
 
     get_client_count() {
         return this.clientCount;
-    }
+    }*/
 
     
     //用户加入聊天房间
@@ -166,7 +173,10 @@ export class Chat {
              //用户信息中放入songId，是用于判断该用户进入的是哪个房间。
             userInfo.songId = songId;  
 
-            that.users[socket.id] = result;
+            //TODO: 将在线用户放入到redis中
+            //that.users[socket.id] = result;
+            that.liveUserManager.userJoinRoom(socket, songId);
+
             //add user to  tree model
             userInfo['isOnline'] = true;
 
@@ -181,15 +191,17 @@ export class Chat {
 
     //处理连接断开
     handle_disconnect(socket) {
-        this.decrease_client();
-        var user = this.users[socket.id];
+        var user = this.liveUserManager.getUserInfo(socket);
         console.log("handle_disconnect: user is " + JSON.stringify(user));
         if (user && user['user']) {
             var result = {status: 0, message: '', user: {    id: user['user']['Mobile']}};
             this.io.emit('user disconnect', JSON.stringify(result));
             //delete user from tree model
-            this.removeUser(this.users[socket.id]['user']);
-            delete this.users[socket.id];
+            this.removeUser(user['user']);
+
+            //TODO: 将用户从redis中删除
+            //delete this.users[socket.id];
+            this.liveUserManager.userLeaveRoom(socket, socket.songId);
         }
     }
 
@@ -287,6 +299,7 @@ export class Chat {
     }
     
     //刷入随机聊天记录
+    //TODO: 需要提供songId
     refresh_chat(req, res) {
         for (var i = 0; i < 5; i ++) {
             var resp = this.get_random_response();
@@ -301,7 +314,8 @@ export class Chat {
     get_stat(streamName, req, res) {
         var that = this;
         wowza.get_client_count(streamName, function(count){
-            var result = { "status": 0, message: '', result: {chatCount: that.get_client_count() + '人', wowzaClientCount: count + '人'}};
+            //TODO: 
+            var result = { "status": 0, message: '', result: {chatCount: 0 + '人', wowzaClientCount: count + '人'}};
             res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
             res.end(JSON.stringify(result));
         });
@@ -326,25 +340,18 @@ export class Chat {
 
     get_live_users(songId, req, res) {
         res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
-        var result = [];
-        for (var id in this.users) {
-            if (songId === this.users[id].user.songId) {
-                result.push(this.users[id]);
-            }
-        }
+        var result = this.liveUserManager.getUsers(songId);
         res.end(JSON.stringify({status: 0, message: '', users: result}));
     }
 
     get_all_live_user_mobiles(songId, req, res) {
         res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
-        var result = new Set();
-        for (var id in this.users) {
-            result.add(this.users[id].user.Mobile);
-        }
+        var result = this.liveUserManager.getAllUserMobile();
         res.end(JSON.stringify({status: 0, message: '', users: Array.from(result)}));
     }
 
     //设置用户是否禁言
+   //TODO：设置禁言
    setChat(userid, canChat, req, res) {
         var that = this;
         request.post( {
@@ -357,6 +364,7 @@ export class Chat {
             function (error, response, body) {
                 res.writeHead(200, {"Content-Type": "application/json, charset=utf-8"});
                 if (!error && response.statusCode == 200) {
+                    /*
                     for(var key in that.users) {
                         var userInfo = that.users[key]['user'];
                         console.log(userInfo);
@@ -366,7 +374,8 @@ export class Chat {
                             console.log(userid+" can chat is " + that.users[key]['user']['CanChat'] );
                             break;
                         }
-                    }
+                    }*/
+                    that.liveUserManager.setChat(null, userid, canChat);
                     res.end(JSON.stringify(body));
                 } else {
                     res.end(JSON.stringify({status: -1, errorMessage: ""}));

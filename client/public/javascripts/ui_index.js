@@ -9,7 +9,7 @@ var getQueryString = function(name) {
 }
 var mobile = getQueryString("mobile") || '15158913567';
 var streamName = getQueryString("stream") || "feiyang";
-var songId = getQueryString("songid") || 14; 
+var songId = getQueryString("songid") || 10; 
 $("#selectCourse").val(songId);
 
 var clientJson = {
@@ -43,7 +43,9 @@ var sendSetChatRequest = function(userid, canChat) {
 };
 
 $("#selectCourse").change(function(){
-    window.location.href = "http://chat.yhkamani.com?mobile="+mobile+"&streamName="+streamName+"&songId="+$('#selectCourse').val();
+    const host = "localhost";
+    const port = 3000;
+    window.location.href = `http://${host}:${port}?mobile=`+mobile+"&streamName="+streamName+"&songId="+$('#selectCourse').val();
 });
 
 $('#users').jstree({
@@ -202,13 +204,17 @@ $('#users').on('ready.jstree', function (e, data) {
         }
         console.log('get_live_uers');
         var users = data['users'];
-        for(var i = 0; i < users.length; i++) {
-            addUserToUI(users[i]);
+        console.log(users)
+        if (users) {
+            for(var i = 0; i < users.length; i++) {
+                addUserToUI(users[i]);
+            }
+            for(var i = 0; i < users.length; i++) {
+                changeUserColor(users[i]);
+            }
         }
 
-        for(var i = 0; i < users.length; i++) {
-            changeUserColor(users[i]);
-        }
+        
     });
 
 
@@ -236,5 +242,5 @@ function  refresh_online_people() {
 }
 
 
-//refresh_online_people();
-//setInterval(refresh_online_people, 10000); //每隔10s刷新一次
+refresh_online_people();
+setInterval(refresh_online_people, 10000); //每隔10s刷新一次

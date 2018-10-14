@@ -40,8 +40,8 @@
     "request-digest": "^1.0.5",
     "rxjs": "5.0.0-beta.12",
     "serve-static": "^1.11.1",
-    "socket.io": "^1.4.8",
-    "socket.io-client": "1.4.8",
+    "socket.io": "^2.1.1",
+    "socket.io-client": "2.1.1",
     "tree-model": "^1.0.3",
     "xml2js": "^0.4.17",
     "zone.js": "0.6.21"

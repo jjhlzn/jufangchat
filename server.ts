@@ -4,7 +4,7 @@ const express = require('express');
 const app = express();
 var http = require('http').Server(app);
 const io = require('socket.io')(http);
-
+//console.log(io)
 import { App } from './app';
 const path = require('path');
 const port = normalizePort(process.env.PORT || 3000);

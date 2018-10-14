@@ -66,3 +66,45 @@ export function find_user_by_mobile(mobile, callback) {
         }); 
     });
 }
+
+/**
+ * 将用户放放到各个房间中。
+ */
+export class LiveUserManager {
+
+    client: any
+
+    constructor() {
+        this.client =  db.get_redis_client();
+    }
+
+    userJoinRoom(socket, songId) {
+        //将用户信息加入到redis中
+    }
+
+    userLeaveRoom(socket, songId) {
+        //将用户信息从redis中移除
+    }
+
+    getRoomUserCount(songId) {
+        //统计redis中的记录条数
+        return 0
+    }
+
+    getUserInfo(socket) {
+        //使用socket.id，获取用户信息
+    }
+
+    getUsers(songId) {
+        //用户房间的所有用户
+    }
+
+    getAllUserMobile() {
+        return new Set();
+    }
+
+    setChat(songId, userMobile, canChat) {
+        //设置用户是否禁言
+    }
+
+}
